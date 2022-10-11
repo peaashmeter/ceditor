@@ -58,7 +58,10 @@ List<Cell> nextState(List<Cell> cells, int generation) {
   const oceanGen = 200;
   List<Cell> newCells = [];
   if (generation < oceanGen) {
+    newCells = deepOcean(cells);
   } else if (generation < 400) {
+    newCells = coastlineComplex(cells);
+  } else if (generation < 500) {
     newCells = ocean(cells);
   } else {
     return cells;

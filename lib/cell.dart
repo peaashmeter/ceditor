@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:worldgen/main.dart';
 
-enum CellType { water, grass, sand }
+enum CellType { water, deepWater, grass, sand }
 
 class Cell {
   late CellType type;
 
   Cell(this.type);
   Cell.init() {
-    type = rand.nextBool() ? CellType.grass : CellType.water;
+    type = rand.nextBool() ? CellType.deepWater : CellType.grass;
   }
 
-  static const colorMap = {
+  static final colorMap = {
     CellType.grass: Colors.lightGreen,
-    CellType.water: Colors.teal,
+    CellType.water: Colors.cyan,
+    CellType.deepWater: Colors.blue,
     CellType.sand: Colors.yellow,
   };
 }
