@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:worldgen/cell.dart';
+import 'package:worldgen/generator.dart';
 
 const fieldWidth = 100;
-const maxGenerations = 300;
+const seed = 123456;
+final rand = Random(seed);
 
 void main() {
   runApp(const WorldGen());
@@ -19,18 +22,20 @@ class WorldGen extends StatefulWidget {
 
 class _WorldGenState extends State<WorldGen> {
   int gen = 0;
-  List<bool> states =
-      List.generate(fieldWidth * fieldWidth, (index) => Random().nextBool());
+  List<Cell> cells = List.generate(fieldWidth * fieldWidth, (_) => Cell.init());
 
   late Stream stream;
   late StreamSubscription sub;
   @override
   void initState() {
-    stream = Stream.periodic(const Duration(milliseconds: 17));
+    stream = Stream.periodic(const Duration(milliseconds: 20));
     sub = stream.listen((event) {
       setState(() {
-        states = nextState(states, gen);
-        gen++;
+        if (gen > 9999) {
+          sub.pause();
+          return;
+        }
+        cells = nextState(cells, gen++);
       });
     });
 
@@ -39,99 +44,45 @@ class _WorldGenState extends State<WorldGen> {
 
   @override
   Widget build(BuildContext context) {
-    if (gen == maxGenerations) sub.pause();
     return MaterialApp(
       home: Scaffold(
         body: CustomPaint(
-          painter: CustomGrid(states),
+          painter: CustomGrid(cells),
         ),
       ),
     );
   }
 }
 
-List<bool> nextState(List<bool> states, int generation) {
-  List<bool> newStates = [];
-
-  for (var i = 0; i < states.length; i++) {
-    if (states[i]) {
-      //жива
-      const l = [3, 4, 6, 7, 8];
-      final n = findLivingNeighbors(i, states);
-      if (l.contains(n)) {
-        newStates.add(true);
-      } else {
-        newStates.add(false);
-      }
-    } else {
-      //мертва
-      const l = [3, 6, 7, 8];
-      final n = findLivingNeighbors(i, states);
-      if (l.contains(n)) {
-        newStates.add(true);
-      } else {
-        newStates.add(false);
-      }
-    }
+List<Cell> nextState(List<Cell> cells, int generation) {
+  const oceanGen = 200;
+  List<Cell> newCells = [];
+  if (generation < oceanGen) {
+  } else if (generation < 400) {
+    newCells = ocean(cells);
+  } else {
+    return cells;
   }
-  return newStates;
-}
-
-int findLivingNeighbors(int index, List<bool> states) {
-  List<int> indices = [];
-  //верх
-  indices.add(index - fieldWidth - 1);
-  indices.add(index - fieldWidth);
-  indices.add(index - fieldWidth + 1);
-  //стороны
-  indices.add(index - 1);
-  indices.add(index + 1);
-  //низ
-  indices.add(index + fieldWidth - 1);
-  indices.add(index + fieldWidth);
-  indices.add(index + fieldWidth + 1);
-
-  //удаление несуществующих
-  indices.removeWhere((i) => i < 0 || i >= fieldWidth * fieldWidth);
-
-  //Тороидальная форма
-  // for (var i = 0; i < indices.length; i++) {
-  //   if (indices[i] < 0) {
-  //     indices[i] = fieldWidth * fieldWidth - indices[i];
-  //   }
-  //   if (indices[i] >= fieldWidth * fieldWidth) {
-  //     indices[i] -= fieldWidth * fieldWidth;
-  //   }
-  // }
-
-  int living = 0;
-  for (var i in indices) {
-    if (states[i]) living++;
-  }
-  return living;
+  return newCells;
 }
 
 class CustomGrid extends CustomPainter {
   static const cellWidth = 16.0;
   static const gap = 2;
 
-  final List<bool> states;
+  final List<Cell> cells;
 
-  CustomGrid(this.states);
+  CustomGrid(this.cells);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Paint deadPaint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = Colors.teal;
-    final Paint alivePaint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = Colors.lightGreen;
+    var paint = Paint()..style = PaintingStyle.fill;
+
     for (int i = 0; i < fieldWidth * fieldWidth; i++) {
       canvas.drawRect(
           Rect.fromLTWH((i % fieldWidth) * cellWidth / 2,
               (i ~/ fieldWidth) * cellWidth / 2, cellWidth, cellWidth),
-          states[i] ? alivePaint : deadPaint);
+          paint..color = Cell.colorMap[cells[i].type]!);
     }
   }
 
