@@ -47,6 +47,32 @@ List<Cell> deepOcean(List<Cell> cells) {
   return newCells;
 }
 
+List<Cell> forest(List<Cell> cells) {
+  List<Cell> newCells = [];
+  for (var i = 0; i < cells.length; i++) {
+    if (cells[i].type == CellType.forest) {
+      const l = [3, 4, 6, 7, 8];
+      final n = findNearby(i, cells, CellType.forest);
+      if (l.contains(n)) {
+        newCells.add(Cell(CellType.forest));
+      } else {
+        newCells.add(Cell(CellType.grass));
+      }
+    } else if (cells[i].type == CellType.grass) {
+      const l = [3, 6, 7, 8];
+      final n = findNearby(i, cells, CellType.forest);
+      if (l.contains(n)) {
+        newCells.add(Cell(CellType.forest));
+      } else {
+        newCells.add(Cell(CellType.grass));
+      }
+    } else {
+      newCells.add(Cell(cells[i].type));
+    }
+  }
+  return newCells;
+}
+
 List<Cell> coastlineComplex(List<Cell> cells) {
   List<Cell> newCells = [];
   for (var i = 0; i < cells.length; i++) {

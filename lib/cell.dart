@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:worldgen/main.dart';
 
-enum CellType { water, deepWater, grass, sand }
+enum CellType { water, deepWater, grass, forest, sand }
 
 class Cell {
   late CellType type;
@@ -13,6 +13,7 @@ class Cell {
 
   static final colorMap = {
     CellType.grass: Colors.lightGreen,
+    CellType.forest: Colors.green,
     CellType.water: Colors.cyan,
     CellType.deepWater: Colors.blue,
     CellType.sand: Colors.yellow,

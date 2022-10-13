@@ -7,7 +7,7 @@ import 'package:worldgen/generator.dart';
 
 const fieldWidth = 100;
 const seed = 123456;
-final rand = Random(seed);
+final rand = Random();
 
 void main() {
   runApp(const WorldGen());
@@ -46,9 +46,31 @@ class _WorldGenState extends State<WorldGen> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: CustomPaint(
-          painter: CustomGrid(cells),
-        ),
+        body: Stack(children: [
+          Container(
+            color: Colors.blueGrey[900],
+          ),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+            Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              SizedBox(
+                width: 400,
+                height: 400,
+                child: CustomPaint(
+                  painter: CustomGrid(cells),
+                ),
+              ),
+            ]),
+            Column(
+              children: [
+                Card(
+                  child: Column(
+                    children: [Text('Функция 1')],
+                  ),
+                )
+              ],
+            )
+          ]),
+        ]),
       ),
     );
   }
@@ -63,6 +85,20 @@ List<Cell> nextState(List<Cell> cells, int generation) {
     newCells = coastlineComplex(cells);
   } else if (generation < 500) {
     newCells = ocean(cells);
+  } else if (generation < 501) {
+    for (var i = 0; i < cells.length; i++) {
+      if (cells[i].type == CellType.grass) {
+        if (rand.nextBool()) {
+          newCells.add(Cell(CellType.forest));
+        } else {
+          newCells.add(Cell(CellType.grass));
+        }
+      } else {
+        newCells.add(Cell(cells[i].type));
+      }
+    }
+  } else if (generation < 550) {
+    newCells = forest(cells);
   } else {
     return cells;
   }
@@ -70,8 +106,7 @@ List<Cell> nextState(List<Cell> cells, int generation) {
 }
 
 class CustomGrid extends CustomPainter {
-  static const cellWidth = 16.0;
-  static const gap = 2;
+  static const cellWidth = 4.0;
 
   final List<Cell> cells;
 
@@ -79,12 +114,14 @@ class CustomGrid extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    var paint = Paint()..style = PaintingStyle.fill;
+    var paint = Paint()
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = false;
 
     for (int i = 0; i < fieldWidth * fieldWidth; i++) {
       canvas.drawRect(
-          Rect.fromLTWH((i % fieldWidth) * cellWidth / 2,
-              (i ~/ fieldWidth) * cellWidth / 2, cellWidth, cellWidth),
+          Rect.fromLTWH((i % fieldWidth) * cellWidth,
+              (i ~/ fieldWidth) * cellWidth, cellWidth, cellWidth),
           paint..color = Cell.colorMap[cells[i].type]!);
     }
   }
