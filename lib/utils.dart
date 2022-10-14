@@ -1,5 +1,10 @@
+import 'dart:math';
+
 import 'package:worldgen/cell.dart';
 import 'package:worldgen/main.dart';
+
+const seed = 123456;
+final rand = Random(seed);
 
 int findNearby(int index, List<Cell> cells, CellType type) {
   final x = index % fieldWidth;

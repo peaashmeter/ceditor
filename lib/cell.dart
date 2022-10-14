@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:worldgen/main.dart';
+import 'package:worldgen/utils.dart';
 
 enum CellType { water, deepWater, grass, forest, sand }
 

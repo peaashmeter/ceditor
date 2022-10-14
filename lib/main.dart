@@ -4,10 +4,11 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:worldgen/cell.dart';
 import 'package:worldgen/generator.dart';
+import 'package:worldgen/gui.dart';
+import 'package:worldgen/model.dart';
+import 'package:worldgen/utils.dart';
 
 const fieldWidth = 100;
-const seed = 123456;
-final rand = Random();
 
 void main() {
   runApp(const WorldGen());
@@ -22,22 +23,32 @@ class WorldGen extends StatefulWidget {
 
 class _WorldGenState extends State<WorldGen> {
   int gen = 0;
-  List<Cell> cells = List.generate(fieldWidth * fieldWidth, (_) => Cell.init());
+  List<Cell> cells =
+      List.generate(fieldWidth * fieldWidth, (_) => Cell(CellType.water));
 
-  late Stream stream;
-  late StreamSubscription sub;
+  late List<RuleModel> model;
+  late CellularAutomataModel automata;
+
+  late Stream<List<Cell>> stream;
   @override
   void initState() {
-    stream = Stream.periodic(const Duration(milliseconds: 20));
-    sub = stream.listen((event) {
-      setState(() {
-        if (gen > 9999) {
-          sub.pause();
-          return;
-        }
-        cells = nextState(cells, gen++);
-      });
-    });
+    // stream = Stream.periodic(const Duration(milliseconds: 20));
+    // sub = stream.listen((event) {
+    //   setState(() {
+    //     if (gen > 9999) {
+    //       sub.pause();
+    //       return;
+    //     }
+    //     cells = nextState(cells, gen++);
+    //   });
+    // });
+
+    model = [
+      RuleModel(1, [Condition.always(0.5, 0, 1)]),
+      RuleModel(1, [Condition.always(0.5, 0, 1)]),
+    ];
+
+    automata = CellularAutomataModel()..rules = model;
 
     super.initState();
   }
@@ -46,32 +57,40 @@ class _WorldGenState extends State<WorldGen> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: Stack(children: [
-          Container(
-            color: Colors.blueGrey[900],
-          ),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-            Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              SizedBox(
-                width: 400,
-                height: 400,
-                child: CustomPaint(
-                  painter: CustomGrid(cells),
-                ),
+          body: Center(
+        child: Row(
+          children: [
+            SizedBox(
+              width: 400,
+              height: 400,
+              child: CustomPaint(
+                painter: CustomGrid(cells),
               ),
-            ]),
+            ),
             Column(
               children: [
-                Card(
-                  child: Column(
-                    children: [Text('Функция 1')],
-                  ),
-                )
+                ...model.map((m) => RuleTile(model: m)),
+                ElevatedButton(
+                    onPressed: () {
+                      if (automata.collectData()) {
+                        setState(() {
+                          cells = List.generate(fieldWidth * fieldWidth,
+                              (_) => Cell(CellType.values.first));
+                        });
+                        stream = automata.makeStream(cells);
+                        stream.listen((event) {
+                          setState(() {
+                            cells = List.from(event);
+                          });
+                        });
+                      }
+                    },
+                    child: Text('Запустить'))
               ],
-            )
-          ]),
-        ]),
-      ),
+            ),
+          ],
+        ),
+      )),
     );
   }
 }
