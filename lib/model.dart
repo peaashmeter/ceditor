@@ -71,6 +71,10 @@ class CellularAutomataModel {
     rules.add(r);
   }
 
+  void deleteRule(RuleModel r) {
+    rules.remove(r);
+  }
+
   bool collectData() {
     for (var rule in rules) {
       if (!(rule.collectData?.call() ?? false)) {

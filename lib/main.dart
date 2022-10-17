@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:worldgen/cell.dart';
 import 'package:worldgen/generator.dart';
@@ -26,29 +27,26 @@ class _WorldGenState extends State<WorldGen> {
   List<Cell> cells =
       List.generate(fieldWidth * fieldWidth, (_) => Cell(CellType.water));
 
+  late List<RuleTile> tiles;
+
   late List<RuleModel> model;
   late CellularAutomataModel automata;
 
   late Stream<List<Cell>> stream;
   @override
   void initState() {
-    // stream = Stream.periodic(const Duration(milliseconds: 20));
-    // sub = stream.listen((event) {
-    //   setState(() {
-    //     if (gen > 9999) {
-    //       sub.pause();
-    //       return;
-    //     }
-    //     cells = nextState(cells, gen++);
-    //   });
-    // });
-
     model = [
-      RuleModel(1, [Condition.always(0.5, 0, 1)]),
       RuleModel(1, [Condition.always(0.5, 0, 1)]),
     ];
 
     automata = CellularAutomataModel()..rules = model;
+
+    tiles = automata.rules
+        .map((m) => RuleTile(
+              model: m,
+              deleteFunction: deleteRule,
+            ))
+        .toList();
 
     super.initState();
   }
@@ -56,9 +54,18 @@ class _WorldGenState extends State<WorldGen> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      scrollBehavior: MaterialScrollBehavior().copyWith(
+        dragDevices: {
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.touch,
+          PointerDeviceKind.stylus,
+          PointerDeviceKind.unknown
+        },
+      ),
       home: Scaffold(
           body: Center(
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             SizedBox(
               width: 400,
@@ -67,31 +74,62 @@ class _WorldGenState extends State<WorldGen> {
                 painter: CustomGrid(cells),
               ),
             ),
-            Column(
-              children: [
-                ...model.map((m) => RuleTile(model: m)),
-                ElevatedButton(
-                    onPressed: () {
-                      if (automata.collectData()) {
-                        setState(() {
-                          cells = List.generate(fieldWidth * fieldWidth,
-                              (_) => Cell(CellType.values.first));
-                        });
-                        stream = automata.makeStream(cells);
-                        stream.listen((event) {
+            SizedBox(
+              width: 500,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      children: tiles,
+                    ),
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        addRule();
+                      },
+                      child: Text('Добавить правило')),
+                  ElevatedButton(
+                      onPressed: () {
+                        if (automata.collectData()) {
                           setState(() {
-                            cells = List.from(event);
+                            cells = List.generate(fieldWidth * fieldWidth,
+                                (_) => Cell(CellType.values.first));
                           });
-                        });
-                      }
-                    },
-                    child: Text('Запустить'))
-              ],
+                          stream = automata.makeStream(cells);
+                          stream.listen((event) {
+                            setState(() {
+                              cells = List.from(event);
+                            });
+                          });
+                        }
+                      },
+                      child: Text('Запустить'))
+                ],
+              ),
             ),
           ],
         ),
       )),
     );
+  }
+
+  void deleteRule(RuleTile ruleTile) {
+    automata.deleteRule(ruleTile.model);
+    setState(() {
+      tiles = List.from(tiles..remove(ruleTile));
+    });
+  }
+
+  void addRule() {
+    final r = RuleModel(1, [Condition.always(0.5, 0, 1)]);
+    automata.addRule(r);
+    setState(() {
+      tiles = List.from(tiles
+        ..add(RuleTile(
+          model: r,
+          deleteFunction: deleteRule,
+        )));
+    });
   }
 }
 

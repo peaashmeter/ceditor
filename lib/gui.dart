@@ -3,7 +3,9 @@ import 'package:worldgen/model.dart';
 
 class RuleTile extends StatefulWidget {
   final RuleModel model;
-  const RuleTile({super.key, required this.model});
+  final void Function(RuleTile) deleteFunction;
+  const RuleTile(
+      {super.key, required this.model, required this.deleteFunction});
 
   @override
   State<RuleTile> createState() => _RuleTileState();
@@ -27,40 +29,54 @@ class _RuleTileState extends State<RuleTile> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Center(
-            child: Column(
-          children: [
-            Row(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minWidth: 500),
+        child: Container(
+          color: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Center(
+                child: Column(
               children: [
-                const Text(
-                  'Выполнить ',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                Row(
+                  children: [
+                    const Text(
+                      'Выполнить ',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(
+                        width: 40,
+                        child: TextField(
+                          controller: timesController,
+                        )),
+                    const Text(' раз:'),
+                    IconButton(
+                        onPressed: () {
+                          widget.deleteFunction(widget);
+                        },
+                        icon: const Icon(
+                          Icons.delete,
+                          color: Colors.red,
+                        ))
+                  ],
                 ),
-                SizedBox(
-                    width: 40,
-                    child: TextField(
-                      controller: timesController,
-                    )),
-                const Text(' раз:'),
+                ...generateConditions(),
+                IconButton(
+                    onPressed: () {
+                      setState(() {
+                        data.addAll({
+                          Condition.always(0.5, 0, 1): List.generate(
+                              5, (index) => TextEditingController())
+                        });
+                      });
+                    },
+                    icon: const Icon(Icons.add_rounded))
               ],
-            ),
-            ...generateConditions(),
-            IconButton(
-                onPressed: () {
-                  setState(() {
-                    data.addAll({
-                      Condition.always(0.5, 0, 1):
-                          List.generate(5, (index) => TextEditingController())
-                    });
-                  });
-                },
-                icon: const Icon(Icons.add_rounded))
-          ],
-        )),
+            )),
+          ),
+        ),
       ),
     );
   }
