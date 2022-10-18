@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:worldgen/cell.dart';
 import 'package:worldgen/model.dart';
 
 class RuleTile extends StatefulWidget {
@@ -32,7 +35,7 @@ class _RuleTileState extends State<RuleTile> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: ConstrainedBox(
-        constraints: BoxConstraints(minWidth: 500),
+        constraints: const BoxConstraints(minWidth: 500),
         child: Container(
           color: Colors.white,
           child: Padding(
@@ -225,5 +228,130 @@ class _RuleTileState extends State<RuleTile> {
     } catch (e) {
       return false;
     }
+  }
+}
+
+class CellPanel extends StatefulWidget {
+  final CellTypeModel model;
+  const CellPanel({super.key, required this.model});
+
+  @override
+  State<CellPanel> createState() => _CellPanelState();
+}
+
+class _CellPanelState extends State<CellPanel> {
+  late List<Color> colors;
+  @override
+  void initState() {
+    colors = widget.model.colors;
+    widget.model.addListener(() {
+      setState(() {
+        colors = widget.model.colors;
+      });
+    });
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(children: [
+      ...List.generate(
+          colors.length,
+          (index) => CellChip(
+                index: index,
+                color: colors[index],
+                model: widget.model,
+              )),
+      IconButton(
+          onPressed: () {
+            widget.model.addColor();
+          },
+          icon: const Icon(Icons.add_rounded))
+    ]);
+  }
+}
+
+class CellChip extends StatefulWidget {
+  final int index;
+  final Color color;
+  final CellTypeModel model;
+  const CellChip(
+      {super.key,
+      required this.index,
+      required this.color,
+      required this.model});
+
+  @override
+  State<CellChip> createState() => _CellChipState();
+}
+
+class _CellChipState extends State<CellChip> {
+  late TextEditingController hexController;
+  Color? newColor;
+
+  @override
+  void initState() {
+    hexController = TextEditingController();
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: InputChip(
+        label: Text('${widget.index}'),
+        avatar: CircleAvatar(
+          backgroundColor: widget.color,
+          radius: 8,
+        ),
+        onPressed: () => showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            scrollable: true,
+            title: Text('Цвет для клетки ${widget.index}'),
+            actions: [
+              TextButton.icon(
+                  onPressed: () {
+                    if (newColor != null) {
+                      widget.model.setColor(widget.index, newColor!);
+                      Navigator.pop(context);
+                    }
+                  },
+                  icon: const Icon(Icons.done_rounded),
+                  label: const Text('Применить'))
+            ],
+            content: Column(
+              children: [
+                ColorPicker(
+                    hexInputController: hexController,
+                    pickerColor: widget.color,
+                    onColorChanged: (c) => newColor = c),
+                Row(
+                  children: [
+                    const Text('Hex: #'),
+                    Expanded(
+                      child: TextField(
+                        controller: hexController,
+                        inputFormatters: [
+                          UpperCaseTextFormatter(),
+                          FilteringTextInputFormatter.allow(
+                              RegExp(kValidHexPattern)),
+                        ],
+                      ),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        ),
+        onDeleted: widget.model.colors.length > 2 ? delete : null,
+      ),
+    );
+  }
+
+  void delete() {
+    widget.model.removeColor(widget.index);
   }
 }

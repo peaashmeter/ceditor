@@ -2,21 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:worldgen/main.dart';
 import 'package:worldgen/utils.dart';
 
-enum CellType { water, deepWater, grass, forest, sand }
-
 class Cell {
-  late CellType type;
+  late int type;
 
   Cell(this.type);
-  Cell.init() {
-    type = rand.nextBool() ? CellType.deepWater : CellType.grass;
+}
+
+class CellTypeModel extends ChangeNotifier {
+  final List<Color> _colors;
+  CellTypeModel() : _colors = [Colors.black, Colors.white];
+
+  Color getColor(int i) => _colors[i];
+
+  List<Color> get colors => List.from(_colors);
+
+  ///Добавляет новый тип клетки с черным цветом
+  void addColor() {
+    _colors.add(Colors.black);
+    notifyListeners();
   }
 
-  static final colorMap = {
-    CellType.grass: Colors.lightGreen,
-    CellType.forest: Colors.green,
-    CellType.water: Colors.cyan,
-    CellType.deepWater: Colors.blue,
-    CellType.sand: Colors.yellow,
-  };
+  void setColor(int i, Color color) {
+    _colors[i] = color;
+    notifyListeners();
+  }
+
+  void removeColor(int i) {
+    _colors.removeAt(i);
+    notifyListeners();
+  }
 }

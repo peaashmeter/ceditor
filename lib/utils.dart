@@ -6,7 +6,7 @@ import 'package:worldgen/main.dart';
 const seed = 123456;
 final rand = Random(seed);
 
-int findNearby(int index, List<Cell> cells, CellType type) {
+int findNearby(int index, List<Cell> cells, int type) {
   final x = index % fieldWidth;
   final y = index ~/ fieldWidth;
 

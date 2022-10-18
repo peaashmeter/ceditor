@@ -34,12 +34,12 @@ class RuleModel {
       cfs[c.checkType] = (int i, List<Cell> cells) {
         final r = rand.nextDouble();
         if ((c.conditionType == ConditionType.always ||
-                cells[i].type == CellType.values[c.checkType]) &&
+                cells[i].type == c.checkType) &&
             r < c.chance) {
           final l = c.count;
-          final n = findNearby(i, cells, CellType.values[c.nearType]);
+          final n = findNearby(i, cells, c.nearType);
           if (c.conditionType == ConditionType.always || l.contains(n)) {
-            return Cell(CellType.values[c.newType]);
+            return Cell(c.newType);
           }
         }
         return Cell(cells[i].type);
@@ -49,9 +49,9 @@ class RuleModel {
     List<Cell> f(List<Cell> cells) {
       List<Cell> newCells_ = [];
       for (var i = 0; i < cells.length; i++) {
-        var type = cells[i].type.index;
+        var type = cells[i].type;
         if (cfs[type] == null) {
-          newCells_.add(Cell(CellType.values[type]));
+          newCells_.add(Cell(type));
         } else {
           newCells_.add(cfs[type]!(i, cells));
         }
