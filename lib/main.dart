@@ -11,6 +11,7 @@ import 'package:worldgen/utils.dart';
 const fieldWidth = 100;
 
 void main() {
+  random = SeededRandom();
   runApp(const Editor());
 }
 
@@ -25,6 +26,8 @@ class _EditorState extends State<Editor> {
   int gen = 0;
   List<Cell> cells = List.generate(fieldWidth * fieldWidth, (_) => Cell(0));
 
+  int? seed;
+
   late List<RuleTile> tiles;
 
   late List<RuleModel> ruleModel;
@@ -33,6 +36,7 @@ class _EditorState extends State<Editor> {
   late CellTypeModel cellTypeModel;
 
   late Stream<List<Cell>> stream;
+
   @override
   void initState() {
     ruleModel = [
@@ -56,7 +60,7 @@ class _EditorState extends State<Editor> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      scrollBehavior: MaterialScrollBehavior().copyWith(
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
         dragDevices: {
           PointerDeviceKind.mouse,
           PointerDeviceKind.touch,
@@ -94,9 +98,16 @@ class _EditorState extends State<Editor> {
                 width: 500,
                 child: Column(
                   children: [
+                    TextField(
+                      onChanged: (s) =>
+                          s != '' ? seed = s.hashCode : seed = null,
+                    ),
                     Expanded(
-                      child: ListView(
-                        children: tiles,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ListView(
+                          children: tiles,
+                        ),
                       ),
                     ),
                     Padding(
@@ -111,6 +122,7 @@ class _EditorState extends State<Editor> {
                       padding: const EdgeInsets.all(8.0),
                       child: ElevatedButton(
                           onPressed: () {
+                            random.setSeed(seed ?? Random().nextInt(1 << 32));
                             if (automata.collectData()) {
                               setState(() {
                                 cells = List.generate(
@@ -124,7 +136,7 @@ class _EditorState extends State<Editor> {
                               });
                             }
                           },
-                          child: Text('Запустить')),
+                          child: const Text('Запустить')),
                     )
                   ],
                 ),

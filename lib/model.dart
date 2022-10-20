@@ -32,7 +32,7 @@ class RuleModel {
     Map<int, Function> cfs = {};
     for (var c in conditions) {
       cfs[c.checkType] = (int i, List<Cell> cells) {
-        final r = rand.nextDouble();
+        final r = random.rand.nextDouble();
         if ((c.conditionType == ConditionType.always ||
                 cells[i].type == c.checkType) &&
             r < c.chance) {

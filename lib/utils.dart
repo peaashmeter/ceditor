@@ -3,8 +3,17 @@ import 'dart:math';
 import 'package:worldgen/cell.dart';
 import 'package:worldgen/main.dart';
 
-const seed = 123456;
-final rand = Random(seed);
+late final SeededRandom random;
+
+class SeededRandom {
+  Random rand;
+
+  SeededRandom() : rand = Random();
+
+  void setSeed(int seed) {
+    rand = Random(seed);
+  }
+}
 
 int findNearby(int index, List<Cell> cells, int type) {
   final x = index % fieldWidth;
