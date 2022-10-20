@@ -5,10 +5,14 @@ import 'package:worldgen/cell.dart';
 import 'package:worldgen/model.dart';
 
 class RuleTile extends StatefulWidget {
+  final int index;
   final RuleModel model;
   final void Function(RuleTile) deleteFunction;
   const RuleTile(
-      {super.key, required this.model, required this.deleteFunction});
+      {super.key,
+      required this.model,
+      required this.deleteFunction,
+      required this.index});
 
   @override
   State<RuleTile> createState() => _RuleTileState();
@@ -32,52 +36,60 @@ class _RuleTileState extends State<RuleTile> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 500),
-        child: Container(
-          color: Colors.white,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Center(
-                child: Column(
-              children: [
-                Row(
-                  children: [
-                    const Text(
-                      'Выполнить ',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(
-                        width: 40,
-                        child: TextField(
-                          controller: timesController,
-                        )),
-                    const Text(' раз:'),
-                    IconButton(
-                        onPressed: () {
-                          widget.deleteFunction(widget);
-                        },
-                        icon: const Icon(
-                          Icons.delete,
-                          color: Colors.red,
-                        ))
-                  ],
-                ),
-                ...generateConditions(),
-                IconButton(
-                    onPressed: () {
-                      setState(() {
-                        data.addAll({
-                          Condition.always(0.5, 0, 1): List.generate(
-                              5, (index) => TextEditingController())
-                        });
-                      });
-                    },
-                    icon: const Icon(Icons.add_rounded))
-              ],
-            )),
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Material(
+        borderRadius: BorderRadius.circular(8.0),
+        elevation: 2,
+        color: Colors.grey[800],
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        '${widget.index}. Выполнить ',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: SizedBox(
+                            width: 60,
+                            child: TextField(
+                              controller: timesController,
+                            )),
+                      ),
+                      const Text(' раз:'),
+                    ],
+                  ),
+                  IconButton(
+                      onPressed: () {
+                        widget.deleteFunction(widget);
+                      },
+                      icon: const Icon(
+                        Icons.delete,
+                        color: Colors.purpleAccent,
+                      ))
+                ],
+              ),
+              ...generateConditions(),
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    data.addAll({
+                      Condition.always(0.5, 0, 1):
+                          List.generate(5, (index) => TextEditingController())
+                    });
+                  });
+                },
+                icon: const Icon(Icons.add_rounded),
+                color: Colors.teal,
+              )
+            ],
           ),
         ),
       ),
@@ -88,95 +100,137 @@ class _RuleTileState extends State<RuleTile> {
     List<Widget> c = [];
     for (var i = 0; i < data.keys.length; i++) {
       c.add(Padding(
-        padding: const EdgeInsets.only(left: 16),
-        child: Column(
-          children: [
-            Row(
+        padding: const EdgeInsets.all(8.0),
+        child: Material(
+          color: Colors.grey[700],
+          elevation: 2,
+          borderRadius: BorderRadius.circular(8.0),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
               children: [
-                const Text(
-                  'Условие: ',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const Text(
-                  'для клетки типа ',
-                ),
-                IntrinsicWidth(
-                  child: ConstrainedBox(
-                      constraints: const BoxConstraints(minWidth: 20),
-                      child: TextField(
-                        controller: data.values.elementAt(i)[0],
-                      )),
-                ),
-                ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 80),
-                    child: DropdownButton<ConditionType>(
-                        value: data.keys.elementAt(i).conditionType,
-                        items: const <DropdownMenuItem<ConditionType>>[
-                          DropdownMenuItem(
-                            value: ConditionType.always,
-                            child: Text('всегда'),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            'Условие: ',
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          DropdownMenuItem(
-                              value: ConditionType.near, child: Text('рядом'))
+                          const Text(
+                            'для клетки типа ',
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: IntrinsicWidth(
+                              child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                      minWidth: 60, maxWidth: 120),
+                                  child: TextField(
+                                    controller: data.values.elementAt(i)[0],
+                                  )),
+                            ),
+                          ),
+                          ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 80),
+                              child: DropdownButton<ConditionType>(
+                                  value: data.keys.elementAt(i).conditionType,
+                                  items: const <
+                                      DropdownMenuItem<ConditionType>>[
+                                    DropdownMenuItem(
+                                      value: ConditionType.always,
+                                      child: Text('всегда'),
+                                    ),
+                                    DropdownMenuItem(
+                                        value: ConditionType.near,
+                                        child: Text('рядом'))
+                                  ],
+                                  onChanged: (value) {
+                                    setState(() {
+                                      data.keys.elementAt(i).conditionType =
+                                          value!;
+                                    });
+                                  })),
                         ],
-                        onChanged: (value) {
+                      ),
+                      IconButton(
+                        onPressed: () {
                           setState(() {
-                            data.keys.elementAt(i).conditionType = value!;
+                            data =
+                                Map.from(data..remove(data.keys.elementAt(i)));
                           });
-                        })),
+                        },
+                        icon: const Icon(Icons.remove_rounded),
+                        color: Colors.purpleAccent,
+                      )
+                    ],
+                  ),
+                ),
                 if (data.keys.elementAt(i).conditionType == ConditionType.near)
                   Row(
                     children: [
-                      IntrinsicWidth(
-                        child: ConstrainedBox(
-                            constraints: const BoxConstraints(minWidth: 20),
-                            child: TextField(
-                              controller: data.values.elementAt(i)[1],
-                            )),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: IntrinsicWidth(
+                          child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                  minWidth: 60, maxWidth: 120),
+                              child: TextField(
+                                controller: data.values.elementAt(i)[1],
+                              )),
+                        ),
                       ),
                       const Text(' клеток типа '),
-                      IntrinsicWidth(
-                        child: ConstrainedBox(
-                            constraints: const BoxConstraints(minWidth: 20),
-                            child: TextField(
-                                controller: data.values.elementAt(i)[2])),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: IntrinsicWidth(
+                          child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                  minWidth: 60, maxWidth: 120),
+                              child: TextField(
+                                  controller: data.values.elementAt(i)[2])),
+                        ),
                       ),
                     ],
                   ),
-                IconButton(
-                    onPressed: () {
-                      setState(() {
-                        data = Map.from(data..remove(data.keys.elementAt(i)));
-                      });
-                    },
-                    icon: const Icon(Icons.remove_rounded))
+                Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        const Text(
+                          'Изменить ',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const Text('состояние клетки на '),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IntrinsicWidth(
+                            child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                    minWidth: 60, maxWidth: 60),
+                                child: TextField(
+                                    controller: data.values.elementAt(i)[3])),
+                          ),
+                        ),
+                        const Text('с вероятностью '),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IntrinsicWidth(
+                            child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                    minWidth: 60, maxWidth: 60),
+                                child: TextField(
+                                    controller: data.values.elementAt(i)[4])),
+                          ),
+                        ),
+                      ],
+                    )),
               ],
             ),
-            Padding(
-                padding: const EdgeInsets.only(left: 16),
-                child: Row(
-                  children: [
-                    const Text(
-                      'Изменить ',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const Text('состояние клетки на '),
-                    IntrinsicWidth(
-                      child: ConstrainedBox(
-                          constraints: const BoxConstraints(minWidth: 20),
-                          child: TextField(
-                              controller: data.values.elementAt(i)[3])),
-                    ),
-                    const Text('с вероятностью '),
-                    IntrinsicWidth(
-                      child: ConstrainedBox(
-                          constraints: const BoxConstraints(minWidth: 20),
-                          child: TextField(
-                              controller: data.values.elementAt(i)[4])),
-                    ),
-                  ],
-                )),
-          ],
+          ),
         ),
       ));
     }
@@ -327,20 +381,26 @@ class _CellChipState extends State<CellChip> {
                     hexInputController: hexController,
                     pickerColor: widget.color,
                     onColorChanged: (c) => newColor = c),
-                Row(
-                  children: [
-                    const Text('Hex: #'),
-                    Expanded(
-                      child: TextField(
-                        controller: hexController,
-                        inputFormatters: [
-                          UpperCaseTextFormatter(),
-                          FilteringTextInputFormatter.allow(
-                              RegExp(kValidHexPattern)),
-                        ],
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    children: [
+                      const Text('Hex: #'),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: TextField(
+                            controller: hexController,
+                            inputFormatters: [
+                              UpperCaseTextFormatter(),
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(kValidHexPattern)),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 )
               ],
             ),

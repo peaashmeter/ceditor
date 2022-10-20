@@ -45,12 +45,11 @@ class _EditorState extends State<Editor> {
 
     automata = CellularAutomataModel()..rules = ruleModel;
 
-    tiles = automata.rules
-        .map((m) => RuleTile(
-              model: m,
-              deleteFunction: deleteRule,
-            ))
-        .toList();
+    tiles = [];
+    for (var i = 0; i < automata.rules.length; i++) {
+      var m = automata.rules[i];
+      tiles.add(RuleTile(index: i + 1, model: m, deleteFunction: deleteRule));
+    }
 
     cellTypeModel = CellTypeModel();
 
@@ -60,6 +59,17 @@ class _EditorState extends State<Editor> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(
+          colorScheme: const ColorScheme.dark(),
+          inputDecorationTheme: InputDecorationTheme(
+            enabledBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Colors.purpleAccent),
+                borderRadius: BorderRadius.circular(8.0)),
+            labelStyle: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+            ),
+          )),
       scrollBehavior: const MaterialScrollBehavior().copyWith(
         dragDevices: {
           PointerDeviceKind.mouse,
@@ -69,7 +79,8 @@ class _EditorState extends State<Editor> {
         },
       ),
       home: Scaffold(
-          body: Center(
+          body: Container(
+        color: Colors.grey[900],
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
@@ -95,18 +106,28 @@ class _EditorState extends State<Editor> {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: SizedBox(
-                width: 500,
+                width: 600,
                 child: Column(
                   children: [
-                    TextField(
-                      onChanged: (s) =>
-                          s != '' ? seed = s.hashCode : seed = null,
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: TextField(
+                        decoration: const InputDecoration(
+                            labelText: 'Сид (оставить пустым для случайного)'),
+                        onChanged: (s) =>
+                            s != '' ? seed = s.hashCode : seed = null,
+                      ),
                     ),
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: ListView(
-                          children: tiles,
+                        child: Container(
+                          decoration: BoxDecoration(
+                              border: Border.all(color: Colors.teal),
+                              borderRadius: BorderRadius.circular(8.0)),
+                          child: ListView(
+                            children: tiles,
+                          ),
                         ),
                       ),
                     ),
@@ -121,6 +142,9 @@ class _EditorState extends State<Editor> {
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: ElevatedButton(
+                          style: const ButtonStyle(
+                              backgroundColor:
+                                  MaterialStatePropertyAll(Colors.teal)),
                           onPressed: () {
                             random.setSeed(seed ?? Random().nextInt(1 << 32));
                             if (automata.collectData()) {
@@ -151,7 +175,17 @@ class _EditorState extends State<Editor> {
   void deleteRule(RuleTile ruleTile) {
     automata.deleteRule(ruleTile.model);
     setState(() {
-      tiles = List.from(tiles..remove(ruleTile));
+      List<RuleTile> newTiles = [];
+      for (var i = 0; i < tiles.length; i++) {
+        if (tiles[i] != ruleTile) {
+          newTiles.add(RuleTile(
+              model: tiles[i].model,
+              deleteFunction: deleteRule,
+              index: newTiles.length + 1));
+        }
+      }
+      tiles = List.from(newTiles);
+      //List.from(tiles..remove(ruleTile));
     });
   }
 
@@ -161,6 +195,7 @@ class _EditorState extends State<Editor> {
     setState(() {
       tiles = List.from(tiles
         ..add(RuleTile(
+          index: tiles.length + 1,
           model: r,
           deleteFunction: deleteRule,
         )));
