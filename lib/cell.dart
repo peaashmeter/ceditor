@@ -11,6 +11,7 @@ class Cell {
 class CellTypeModel extends ChangeNotifier {
   final List<Color> _colors;
   CellTypeModel() : _colors = [Colors.black, Colors.white];
+  CellTypeModel.colors(List<Color> colors) : _colors = colors;
 
   Color getColor(int i) => _colors[i];
 

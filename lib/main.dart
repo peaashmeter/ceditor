@@ -51,7 +51,7 @@ class _EditorState extends State<Editor> {
       tiles.add(RuleTile(index: i + 1, model: m, deleteFunction: deleteRule));
     }
 
-    cellTypeModel = CellTypeModel();
+    cellTypeModel = automata.cellTypeModel;
 
     super.initState();
   }

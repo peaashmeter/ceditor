@@ -66,6 +66,7 @@ class RuleModel {
 ///Определяем клеточный автомат как набор последовательных правил
 class CellularAutomataModel {
   List<RuleModel> rules = [];
+  CellTypeModel cellTypeModel = CellTypeModel();
 
   void addRule(RuleModel r) {
     rules.add(r);
