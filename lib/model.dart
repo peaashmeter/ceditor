@@ -63,7 +63,8 @@ class RuleModel {
   }
 }
 
-///Определяем клеточный автомат как набор последовательных правил
+///Определяем клеточный автомат как набор последовательных правил, применямых к
+///клеткам указанных типов
 class CellularAutomataModel {
   List<RuleModel> rules = [];
   CellTypeModel cellTypeModel = CellTypeModel();
