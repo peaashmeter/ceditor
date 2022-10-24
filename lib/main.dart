@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:worldgen/cell.dart';
 import 'package:worldgen/gui.dart';
 import 'package:worldgen/model.dart';
+import 'package:worldgen/template.dart';
 import 'package:worldgen/utils.dart';
 
 const fieldWidth = 100;
@@ -29,31 +30,39 @@ class _EditorState extends State<Editor> {
   int? seed;
 
   late List<RuleTile> tiles;
-
-  late List<RuleModel> ruleModel;
   late CellularAutomataModel automata;
-
-  late CellTypeModel cellTypeModel;
-
   late Stream<List<Cell>> stream;
+  late ScrollController rulesListController;
 
   @override
   void initState() {
-    ruleModel = [
-      RuleModel(1, [Condition.always(0.5, 0, 1)]),
-    ];
-
-    automata = CellularAutomataModel()..rules = ruleModel;
-
-    tiles = [];
-    for (var i = 0; i < automata.rules.length; i++) {
-      var m = automata.rules[i];
-      tiles.add(RuleTile(index: i + 1, model: m, deleteFunction: deleteRule));
-    }
-
-    cellTypeModel = automata.cellTypeModel;
+    automata = CellularAutomataModel()
+      ..rules = [
+        RuleModel(
+          1,
+          [
+            Condition.always(0.5, 0, 1),
+          ],
+        ),
+      ];
+    tiles = generateTiles(automata);
+    rulesListController = ScrollController();
 
     super.initState();
+  }
+
+  List<RuleTile> generateTiles(CellularAutomataModel model) {
+    tiles = [];
+    for (var i = 0; i < model.rules.length; i++) {
+      var m = model.rules[i];
+      tiles.add(RuleTile(
+        index: i + 1,
+        model: m,
+        deleteFunction: deleteRule,
+        key: ValueKey(automata.rules[i]),
+      ));
+    }
+    return tiles;
   }
 
   @override
@@ -89,16 +98,91 @@ class _EditorState extends State<Editor> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      bottom: 8.0,
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                          border: Border.all(color: Colors.teal),
+                          borderRadius: BorderRadius.circular(8.0)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    automata = CellularAutomataModel.copy(
+                                        templates[0]);
+                                    tiles = generateTiles(automata);
+                                  });
+                                  WidgetsBinding.instance
+                                      .addPostFrameCallback((_) {
+                                    rulesListController.animateTo(
+                                        rulesListController
+                                            .position.maxScrollExtent,
+                                        duration:
+                                            const Duration(milliseconds: 500),
+                                        curve: Curves.easeIn);
+                                  });
+                                },
+                                child: const Text('Жизнь')),
+                            TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    automata = CellularAutomataModel.copy(
+                                        templates[1]);
+                                    tiles = generateTiles(automata);
+                                  });
+                                  WidgetsBinding.instance
+                                      .addPostFrameCallback((_) {
+                                    rulesListController.animateTo(
+                                        rulesListController
+                                            .position.maxScrollExtent,
+                                        duration:
+                                            const Duration(milliseconds: 500),
+                                        curve: Curves.easeIn);
+                                  });
+                                },
+                                child: const Text('День и ночь')),
+                            TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    automata = CellularAutomataModel.copy(
+                                        templates[2]);
+                                    tiles = generateTiles(automata);
+                                  });
+                                  WidgetsBinding.instance
+                                      .addPostFrameCallback((_) {
+                                    rulesListController.animateTo(
+                                        rulesListController
+                                            .position.maxScrollExtent,
+                                        duration:
+                                            const Duration(milliseconds: 500),
+                                        curve: Curves.easeIn);
+                                  });
+                                },
+                                child: const Text('Континент')),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                   SizedBox(
                     width: 400,
                     height: 400,
                     child: CustomPaint(
-                      painter: CustomGrid(cells, cellTypeModel),
+                      painter: CustomGrid(cells, automata.cellTypeModel),
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: CellPanel(model: cellTypeModel),
+                    child: CellPanel(
+                      model: automata.cellTypeModel,
+                      key: ValueKey(automata.cellTypeModel),
+                    ),
                   )
                 ],
               ),
@@ -126,6 +210,7 @@ class _EditorState extends State<Editor> {
                               border: Border.all(color: Colors.teal),
                               borderRadius: BorderRadius.circular(8.0)),
                           child: ListView(
+                            controller: rulesListController,
                             children: tiles,
                           ),
                         ),

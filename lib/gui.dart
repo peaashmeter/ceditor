@@ -8,6 +8,7 @@ class RuleTile extends StatefulWidget {
   final int index;
   final RuleModel model;
   final void Function(RuleTile) deleteFunction;
+
   const RuleTile(
       {super.key,
       required this.model,
