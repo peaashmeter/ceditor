@@ -32,6 +32,7 @@ class _EditorState extends State<Editor> {
   late List<RuleTile> tiles;
   late CellularAutomataModel automata;
   late Stream<List<Cell>> stream;
+  StreamSubscription? streamSubscription;
   late ScrollController rulesListController;
 
   @override
@@ -112,58 +113,13 @@ class _EditorState extends State<Editor> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    automata = CellularAutomataModel.copy(
-                                        templates[0]);
-                                    tiles = generateTiles(automata);
-                                  });
-                                  WidgetsBinding.instance
-                                      .addPostFrameCallback((_) {
-                                    rulesListController.animateTo(
-                                        rulesListController
-                                            .position.maxScrollExtent,
-                                        duration:
-                                            const Duration(milliseconds: 500),
-                                        curve: Curves.easeIn);
-                                  });
-                                },
+                                onPressed: () => loadTemplate(0),
                                 child: const Text('Жизнь')),
                             TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    automata = CellularAutomataModel.copy(
-                                        templates[1]);
-                                    tiles = generateTiles(automata);
-                                  });
-                                  WidgetsBinding.instance
-                                      .addPostFrameCallback((_) {
-                                    rulesListController.animateTo(
-                                        rulesListController
-                                            .position.maxScrollExtent,
-                                        duration:
-                                            const Duration(milliseconds: 500),
-                                        curve: Curves.easeIn);
-                                  });
-                                },
+                                onPressed: () => loadTemplate(1),
                                 child: const Text('День и ночь')),
                             TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    automata = CellularAutomataModel.copy(
-                                        templates[2]);
-                                    tiles = generateTiles(automata);
-                                  });
-                                  WidgetsBinding.instance
-                                      .addPostFrameCallback((_) {
-                                    rulesListController.animateTo(
-                                        rulesListController
-                                            .position.maxScrollExtent,
-                                        duration:
-                                            const Duration(milliseconds: 500),
-                                        curve: Curves.easeIn);
-                                  });
-                                },
+                                onPressed: () => loadTemplate(2),
                                 child: const Text('Континент')),
                           ],
                         ),
@@ -238,7 +194,8 @@ class _EditorState extends State<Editor> {
                                     fieldWidth * fieldWidth, (_) => Cell(0));
                               });
                               stream = automata.makeStream(cells);
-                              stream.listen((event) {
+                              streamSubscription?.cancel();
+                              streamSubscription = stream.listen((event) {
                                 setState(() {
                                   cells = List.from(event);
                                 });
@@ -255,6 +212,22 @@ class _EditorState extends State<Editor> {
         ),
       )),
     );
+  }
+
+  void loadTemplate(int i) {
+    streamSubscription?.cancel();
+    cells = List.generate(fieldWidth * fieldWidth, (_) => Cell(0));
+
+    setState(() {
+      automata = CellularAutomataModel.copy(templates[i]);
+      tiles = generateTiles(automata);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      rulesListController.animateTo(
+          rulesListController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeIn);
+    });
   }
 
   void deleteRule(RuleTile ruleTile) {
