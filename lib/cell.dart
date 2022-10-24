@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:worldgen/jcep.dart';
 import 'package:worldgen/main.dart';
+import 'package:worldgen/model.dart';
 import 'package:worldgen/utils.dart';
+
+import 'serialize.dart';
 
 class Cell {
   late int type;
@@ -8,7 +12,7 @@ class Cell {
   Cell(this.type);
 }
 
-class CellTypeModel extends ChangeNotifier {
+class CellTypeModel extends ChangeNotifier implements ISerializable {
   final List<Color> _colors;
   CellTypeModel() : _colors = [Colors.black, Colors.white];
   CellTypeModel.colors(List<Color> colors) : _colors = colors;
@@ -32,4 +36,12 @@ class CellTypeModel extends ChangeNotifier {
     _colors.removeAt(i);
     notifyListeners();
   }
+
+  CellTypeModel.fromJson(Map<String, dynamic> json,) :
+    _colors = int2Colors(json['colors'].cast<int>());
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'colors' : colors2Int(_colors), 
+  };
 }
