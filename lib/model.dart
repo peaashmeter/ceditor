@@ -56,7 +56,7 @@ class RuleModel {
           newCells_.add(cfs[type]!(i, cells));
         }
       }
-      return newCells_;
+      return newCells_; 
     }
 
     return f;
