@@ -321,7 +321,10 @@ class _CellPanelState extends State<CellPanel> {
           onPressed: () {
             widget.model.addColor();
           },
-          icon: const Icon(Icons.add_rounded))
+          icon: const Icon(
+            Icons.add_rounded,
+            color: Colors.teal,
+          ))
     ]);
   }
 }

@@ -133,6 +133,16 @@ class _EditorState extends State<Editor> {
                       painter: CustomGrid(cells, automata.cellTypeModel),
                     ),
                   ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      SelectableText(
+                        '${seed ?? ''}',
+                        style: const TextStyle(
+                            color: Colors.teal, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: CellPanel(
@@ -154,8 +164,18 @@ class _EditorState extends State<Editor> {
                       child: TextField(
                         decoration: const InputDecoration(
                             labelText: 'Сид (оставить пустым для случайного)'),
-                        onChanged: (s) =>
-                            s != '' ? seed = s.hashCode : seed = null,
+                        onChanged: (s) {
+                          if (s != '') {
+                            final sInt = int.tryParse(s);
+                            if (sInt != null) {
+                              seed = sInt;
+                            } else {
+                              seed = s.hashCode;
+                            }
+                          } else {
+                            seed = null;
+                          }
+                        },
                       ),
                     ),
                     Expanded(
@@ -187,7 +207,9 @@ class _EditorState extends State<Editor> {
                               backgroundColor:
                                   MaterialStatePropertyAll(Colors.teal)),
                           onPressed: () {
-                            random.setSeed(seed ?? Random().nextInt(1 << 32));
+                            final seed_ = seed ?? Random().nextInt(1 << 32);
+                            random.setSeed(seed_);
+
                             if (automata.collectData()) {
                               setState(() {
                                 cells = List.generate(
@@ -198,6 +220,7 @@ class _EditorState extends State<Editor> {
                               streamSubscription = stream.listen((event) {
                                 setState(() {
                                   cells = List.from(event);
+                                  seed = seed_;
                                 });
                               });
                             }

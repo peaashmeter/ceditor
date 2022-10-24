@@ -47,7 +47,7 @@ final List<CellularAutomataModel> templates = [
       Colors.blue,
       Colors.lightGreen,
       Colors.yellow,
-      Colors.lightBlue,
+      Colors.cyan,
       Colors.lightGreen[800]!
     ])
 ];
