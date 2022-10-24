@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:worldgen/cell.dart';
 import 'package:worldgen/gui.dart';
-import 'package:worldgen/jcep.dart';
 import 'package:worldgen/model.dart';
 import 'package:worldgen/template.dart';
 import 'package:worldgen/utils.dart';
@@ -14,7 +13,10 @@ import 'package:worldgen/utils.dart';
 const fieldWidth = 100;
 
 void main() {
-  print(":(");
+  if (kDebugMode) {
+    print(":(");
+  }
+
   random = SeededRandom();
   runApp(const Editor());
 }
