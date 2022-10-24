@@ -1,9 +1,14 @@
+import 'dart:convert';
+
 import 'package:worldgen/cell.dart';
 import 'package:worldgen/utils.dart';
 
+import 'jcep.dart';
+import 'serialize.dart';
+
 enum ConditionType { always, near }
 
-class Condition {
+class Condition implements ISerializable{
   ConditionType conditionType;
   List<int> count;
   int nearType;
@@ -20,9 +25,27 @@ class Condition {
   Condition.near(
       this.count, this.nearType, this.checkType, this.newType, this.chance)
       : conditionType = ConditionType.near;
+  
+  Condition.fromJson(Map<String, dynamic> json)
+    : conditionType = ConditionType.values[json['conditionType']],
+      count = json['count'].cast<int>(),
+      nearType = json['nearType'],
+      checkType = json['checkType'],
+      newType = json['newType'],
+      chance = json['chance'];
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'conditionType': ConditionType.always.index,
+    'count': count,
+    'nearType': nearType,
+    'checkType': checkType,
+    'newType': newType,
+    'chance': chance,
+  };
 }
 
-class RuleModel {
+class RuleModel implements ISerializable {
   bool Function()? collectData;
   int times;
   List<Condition> conditions;
@@ -56,16 +79,27 @@ class RuleModel {
           newCells_.add(cfs[type]!(i, cells));
         }
       }
-      return newCells_;
+      return newCells_; 
     }
 
     return f;
   }
+
+  RuleModel.fromJson(Map<String, dynamic> json)
+    : times = json['times'],
+      conditions = List.generate(json['conditions'].length, 
+                  (index) => Condition.fromJson(json['conditions'][index]));
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'times': times,
+    'conditions': conditions.map((e) => e.toJson()).toList(),
+  };
 }
 
 ///Определяем клеточный автомат как набор последовательных правил, применямых к
 ///клеткам указанных типов
-class CellularAutomataModel {
+class CellularAutomataModel implements ISerializable {
   late List<RuleModel> rules;
   late CellTypeModel cellTypeModel;
 
@@ -105,4 +139,14 @@ class CellularAutomataModel {
       }
     }
   }
+  CellularAutomataModel.fromJson(Map<String, dynamic> json) : 
+    rules = List.generate(json['rules'].length, 
+                  (index) => RuleModel.fromJson(json['rules'][index])),
+    cellTypeModel = CellTypeModel.fromJson(json['cellTypeModel']);
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'rules' : rules.map((e) => e.toJson()).toList(),
+    'cellTypeModel' : cellTypeModel.toJson(),
+  };
 }
