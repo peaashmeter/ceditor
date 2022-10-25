@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:worldgen/jcep.dart';
-import 'package:worldgen/main.dart';
-import 'package:worldgen/model.dart';
-import 'package:worldgen/utils.dart';
 
 import 'serialize.dart';
 
