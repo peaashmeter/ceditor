@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:worldgen/jcep.dart';
+import 'jcep.dart';
 
 import 'serialize.dart';
 
@@ -34,11 +34,12 @@ class CellTypeModel extends ChangeNotifier implements ISerializable {
     notifyListeners();
   }
 
-  CellTypeModel.fromJson(Map<String, dynamic> json,) :
-    _colors = int2Colors(json['colors'].cast<int>());
+  CellTypeModel.fromJson(
+    Map<String, dynamic> json,
+  ) : _colors = int2Colors(json['colors'].cast<int>());
 
   @override
   Map<String, dynamic> toJson() => {
-    'colors' : colors2Int(_colors), 
-  };
+        'colors': colors2Int(_colors),
+      };
 }

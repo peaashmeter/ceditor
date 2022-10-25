@@ -1,7 +1,7 @@
 import 'dart:math';
 
-import 'package:worldgen/cell.dart';
-import 'package:worldgen/main.dart';
+import 'cell.dart';
+import 'main.dart';
 
 late final SeededRandom random;
 

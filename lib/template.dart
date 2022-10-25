@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:worldgen/cell.dart';
-import 'package:worldgen/model.dart';
+import 'cell.dart';
+import 'model.dart';
 
 final List<CellularAutomataModel> templates = [
   CellularAutomataModel()

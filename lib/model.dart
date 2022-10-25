@@ -1,5 +1,5 @@
-import 'package:worldgen/cell.dart';
-import 'package:worldgen/utils.dart';
+import 'cell.dart';
+import 'utils.dart';
 
 import 'serialize.dart';
 

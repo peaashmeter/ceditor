@@ -8,11 +8,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:worldgen/cell.dart';
-import 'package:worldgen/gui.dart';
-import 'package:worldgen/model.dart';
-import 'package:worldgen/template.dart';
-import 'package:worldgen/utils.dart';
+import 'cell.dart';
+import 'gui.dart';
+import 'model.dart';
+import 'template.dart';
+import 'utils.dart';
 
 const fieldWidth = 100;
 
