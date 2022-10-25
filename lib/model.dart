@@ -1,9 +1,6 @@
-import 'dart:convert';
-
 import 'package:worldgen/cell.dart';
 import 'package:worldgen/utils.dart';
 
-import 'jcep.dart';
 import 'serialize.dart';
 
 enum ConditionType { always, near }
@@ -36,7 +33,9 @@ class Condition implements ISerializable{
 
   @override
   Map<String, dynamic> toJson() => {
-    'conditionType': ConditionType.always.index,
+    'conditionType': conditionType == ConditionType.always ? 
+                                      ConditionType.always.index : 
+                                      ConditionType.near.index,
     'count': count,
     'nearType': nearType,
     'checkType': checkType,
