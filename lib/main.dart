@@ -1,6 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' hide File;
 import 'dart:math';
 
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:worldgen/cell.dart';
@@ -12,7 +17,10 @@ import 'package:worldgen/utils.dart';
 const fieldWidth = 100;
 
 void main() {
-  print(":(");
+  if (kDebugMode) {
+    print(":(");
+  }
+
   random = SeededRandom();
   runApp(const Editor());
 }
@@ -100,6 +108,49 @@ class _EditorState extends State<Editor> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 32),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        ElevatedButton(
+                            onPressed: () {
+                              final json = jsonEncode(automata.toJson());
+                              final bytes = utf8.encode(json);
+                              final blob = Blob([bytes]);
+                              final url = Url.createObjectUrlFromBlob(blob);
+                              final anchor =
+                                  document.createElement('a') as AnchorElement
+                                    ..href = url
+                                    ..style.display = 'none'
+                                    ..download = 'automaton.json';
+                              document.body?.children.add(anchor);
+
+                              anchor.click();
+
+                              document.body?.children.remove(anchor);
+                              Url.revokeObjectUrl(url);
+                            },
+                            child: const Text('Сохранить')),
+                        ElevatedButton(
+                            onPressed: () async {
+                              var result = await FilePicker.platform.pickFiles(
+                                  type: FileType.custom,
+                                  allowedExtensions: ['json']);
+
+                              if (result != null) {
+                                final bytes = result.files.first.bytes;
+                                final json = utf8.decode(bytes!);
+                                final asMap = jsonDecode(json);
+                                final automaton_ =
+                                    CellularAutomataModel.fromJson(asMap);
+                                loadAutomaton(automaton_);
+                              }
+                            },
+                            child: const Text('Загрузить')),
+                      ],
+                    ),
+                  ),
                   Padding(
                     padding: const EdgeInsets.only(
                       bottom: 8.0,
@@ -208,7 +259,8 @@ class _EditorState extends State<Editor> {
                               backgroundColor:
                                   MaterialStatePropertyAll(Colors.teal)),
                           onPressed: () {
-                            final seed_ = seed ?? Random().nextInt(1 << 32);
+                            final seed_ =
+                                seed ?? Random().nextInt(pow(2, 32).toInt());
                             random.setSeed(seed_);
 
                             if (automata.collectData()) {
@@ -246,6 +298,24 @@ class _EditorState extends State<Editor> {
       automata = CellularAutomataModel.copy(templates[i]);
       tiles = generateTiles(automata);
     });
+    rulesListController.jumpTo(rulesListController.position.minScrollExtent);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      rulesListController.animateTo(
+          rulesListController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeIn);
+    });
+  }
+
+  void loadAutomaton(CellularAutomataModel automataModel) {
+    streamSubscription?.cancel();
+    cells = List.generate(fieldWidth * fieldWidth, (_) => Cell(0));
+
+    setState(() {
+      automata = CellularAutomataModel.copy(automataModel);
+      tiles = generateTiles(automata);
+    });
+    rulesListController.jumpTo(rulesListController.position.minScrollExtent);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       rulesListController.animateTo(
           rulesListController.position.maxScrollExtent,
