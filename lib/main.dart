@@ -12,7 +12,7 @@ import 'package:worldgen/utils.dart';
 const fieldWidth = 100;
 
 void main() {
-  print(templates[2].toJson());
+  print(":(");
   random = SeededRandom();
   runApp(const Editor());
 }
