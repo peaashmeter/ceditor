@@ -260,7 +260,7 @@ class _RuleTileState extends State<RuleTile> {
 
   bool collectData() {
     try {
-      widget.model.times = int.parse(timesController.text);
+      widget.model.times = double.parse(timesController.text).toInt();
       widget.model.conditions = [];
       for (var e in data.entries) {
         var conditionType = e.key.conditionType;
