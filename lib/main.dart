@@ -37,6 +37,7 @@ class _EditorState extends State<Editor> {
   List<Cell> cells = List.generate(fieldWidth * fieldWidth, (_) => Cell(0));
 
   int? seed;
+  int? displaySeed;
 
   late List<RuleTile> tiles;
   late CellularAutomataModel automata;
@@ -190,7 +191,7 @@ class _EditorState extends State<Editor> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       SelectableText(
-                        '${seed ?? ''}',
+                        '${displaySeed ?? ''}',
                         style: const TextStyle(
                             color: Colors.teal, fontWeight: FontWeight.bold),
                       ),
@@ -274,7 +275,7 @@ class _EditorState extends State<Editor> {
                               streamSubscription = stream.listen((event) {
                                 setState(() {
                                   cells = List.from(event);
-                                  seed = seed_;
+                                  displaySeed = seed_;
                                 });
                               });
                             }
