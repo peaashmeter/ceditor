@@ -22,7 +22,28 @@ void main() {
   }
 
   random = SeededRandom();
-  runApp(const Editor());
+  runApp(MaterialApp(
+      title: 'Редактор клеточных автоматов',
+      theme: ThemeData(
+          colorScheme: const ColorScheme.dark(),
+          inputDecorationTheme: InputDecorationTheme(
+            enabledBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Colors.purpleAccent),
+                borderRadius: BorderRadius.circular(8.0)),
+            labelStyle: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+            ),
+          )),
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        dragDevices: {
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.touch,
+          PointerDeviceKind.stylus,
+          PointerDeviceKind.unknown
+        },
+      ),
+      home: const Editor()));
 }
 
 class Editor extends StatefulWidget {
@@ -78,217 +99,393 @@ class _EditorState extends State<Editor> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Редактор клеточных автоматов',
-      theme: ThemeData(
-          colorScheme: const ColorScheme.dark(),
-          inputDecorationTheme: InputDecorationTheme(
-            enabledBorder: OutlineInputBorder(
-                borderSide: const BorderSide(color: Colors.purpleAccent),
-                borderRadius: BorderRadius.circular(8.0)),
-            labelStyle: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-            ),
-          )),
-      scrollBehavior: const MaterialScrollBehavior().copyWith(
-        dragDevices: {
-          PointerDeviceKind.mouse,
-          PointerDeviceKind.touch,
-          PointerDeviceKind.stylus,
-          PointerDeviceKind.unknown
-        },
-      ),
-      home: Scaffold(
-          body: Container(
-        color: Colors.grey[900],
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            SizedBox(
-              width: 400,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 32),
+    final horizontal = MediaQuery.of(context).size.width > 1000;
+
+    return Scaffold(
+        body: Container(
+            color: Colors.grey[900],
+            child: horizontal ? horizontalView() : verticalView()));
+  }
+
+  Row horizontalView() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 32),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    ElevatedButton(
+                        onPressed: () {
+                          final json = jsonEncode(automata.toJson());
+                          final bytes = utf8.encode(json);
+                          final blob = Blob([bytes]);
+                          final url = Url.createObjectUrlFromBlob(blob);
+                          final anchor =
+                              document.createElement('a') as AnchorElement
+                                ..href = url
+                                ..style.display = 'none'
+                                ..download = 'automaton.json';
+                          document.body?.children.add(anchor);
+
+                          anchor.click();
+
+                          document.body?.children.remove(anchor);
+                          Url.revokeObjectUrl(url);
+                        },
+                        child: const Text('Сохранить')),
+                    ElevatedButton(
+                        onPressed: () async {
+                          var result = await FilePicker.platform.pickFiles(
+                              type: FileType.custom,
+                              allowedExtensions: ['json']);
+
+                          if (result != null) {
+                            final bytes = result.files.first.bytes;
+                            final json = utf8.decode(bytes!);
+                            final asMap = jsonDecode(json);
+                            final automaton_ =
+                                CellularAutomataModel.fromJson(asMap);
+                            loadAutomaton(automaton_);
+                          }
+                        },
+                        child: const Text('Загрузить')),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(
+                  bottom: 8.0,
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                      border: Border.all(color: Colors.teal),
+                      borderRadius: BorderRadius.circular(8.0)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        ElevatedButton(
-                            onPressed: () {
-                              final json = jsonEncode(automata.toJson());
-                              final bytes = utf8.encode(json);
-                              final blob = Blob([bytes]);
-                              final url = Url.createObjectUrlFromBlob(blob);
-                              final anchor =
-                                  document.createElement('a') as AnchorElement
-                                    ..href = url
-                                    ..style.display = 'none'
-                                    ..download = 'automaton.json';
-                              document.body?.children.add(anchor);
-
-                              anchor.click();
-
-                              document.body?.children.remove(anchor);
-                              Url.revokeObjectUrl(url);
-                            },
-                            child: const Text('Сохранить')),
-                        ElevatedButton(
-                            onPressed: () async {
-                              var result = await FilePicker.platform.pickFiles(
-                                  type: FileType.custom,
-                                  allowedExtensions: ['json']);
-
-                              if (result != null) {
-                                final bytes = result.files.first.bytes;
-                                final json = utf8.decode(bytes!);
-                                final asMap = jsonDecode(json);
-                                final automaton_ =
-                                    CellularAutomataModel.fromJson(asMap);
-                                loadAutomaton(automaton_);
-                              }
-                            },
-                            child: const Text('Загрузить')),
+                        TextButton(
+                            onPressed: () => loadTemplate(0),
+                            child: const Text('Жизнь')),
+                        TextButton(
+                            onPressed: () => loadTemplate(1),
+                            child: const Text('День и ночь')),
+                        TextButton(
+                            onPressed: () => loadTemplate(2),
+                            child: const Text('Континент')),
                       ],
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: 8.0,
-                    ),
+                ),
+              ),
+              SizedBox(
+                width: 400,
+                height: 400,
+                child: CustomPaint(
+                  painter: CustomGrid(cells, automata.cellTypeModel),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  SelectableText(
+                    '${displaySeed ?? ''}',
+                    style: const TextStyle(
+                        color: Colors.teal, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CellPanel(
+                  model: automata.cellTypeModel,
+                  key: ValueKey(automata.cellTypeModel),
+                ),
+              )
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: SizedBox(
+            width: 600,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    decoration: const InputDecoration(
+                        labelText: 'Сид (оставить пустым для случайного)'),
+                    onChanged: (s) {
+                      if (s != '') {
+                        final sInt = int.tryParse(s);
+                        if (sInt != null) {
+                          seed = sInt;
+                        } else {
+                          seed = s.hashCode;
+                        }
+                      } else {
+                        seed = null;
+                      }
+                    },
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
                     child: Container(
                       decoration: BoxDecoration(
                           border: Border.all(color: Colors.teal),
                           borderRadius: BorderRadius.circular(8.0)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            TextButton(
-                                onPressed: () => loadTemplate(0),
-                                child: const Text('Жизнь')),
-                            TextButton(
-                                onPressed: () => loadTemplate(1),
-                                child: const Text('День и ночь')),
-                            TextButton(
-                                onPressed: () => loadTemplate(2),
-                                child: const Text('Континент')),
-                          ],
+                      child: ListView(
+                        controller: rulesListController,
+                        children: tiles,
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(
+                      onPressed: () {
+                        addRule();
+                      },
+                      child: const Text('Добавить правило')),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(
+                      style: const ButtonStyle(
+                          backgroundColor:
+                              MaterialStatePropertyAll(Colors.teal)),
+                      onPressed: () {
+                        final seed_ =
+                            seed ?? Random().nextInt(pow(2, 32).toInt());
+                        random.setSeed(seed_);
+
+                        if (automata.collectData()) {
+                          setState(() {
+                            cells = List.generate(
+                                fieldWidth * fieldWidth, (_) => Cell(0));
+                          });
+                          stream = automata.makeStream(cells);
+                          streamSubscription?.cancel();
+                          streamSubscription = stream.listen((event) {
+                            setState(() {
+                              cells = List.from(event);
+                              displaySeed = seed_;
+                            });
+                          });
+                        }
+                      },
+                      child: const Text('Запустить')),
+                )
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget verticalView() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: ListView(
+        shrinkWrap: true,
+        children: [
+          SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 32),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      ElevatedButton(
+                          onPressed: () {
+                            final json = jsonEncode(automata.toJson());
+                            final bytes = utf8.encode(json);
+                            final blob = Blob([bytes]);
+                            final url = Url.createObjectUrlFromBlob(blob);
+                            final anchor =
+                                document.createElement('a') as AnchorElement
+                                  ..href = url
+                                  ..style.display = 'none'
+                                  ..download = 'automaton.json';
+                            document.body?.children.add(anchor);
+
+                            anchor.click();
+
+                            document.body?.children.remove(anchor);
+                            Url.revokeObjectUrl(url);
+                          },
+                          child: const Text('Сохранить')),
+                      ElevatedButton(
+                          onPressed: () async {
+                            var result = await FilePicker.platform.pickFiles(
+                                type: FileType.custom,
+                                allowedExtensions: ['json']);
+
+                            if (result != null) {
+                              final bytes = result.files.first.bytes;
+                              final json = utf8.decode(bytes!);
+                              final asMap = jsonDecode(json);
+                              final automaton_ =
+                                  CellularAutomataModel.fromJson(asMap);
+                              loadAutomaton(automaton_);
+                            }
+                          },
+                          child: const Text('Загрузить')),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(
+                    bottom: 8.0,
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                        border: Border.all(color: Colors.teal),
+                        borderRadius: BorderRadius.circular(8.0)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextButton(
+                              onPressed: () => loadTemplate(0),
+                              child: const Text('Жизнь')),
+                          TextButton(
+                              onPressed: () => loadTemplate(1),
+                              child: const Text('День и ночь')),
+                          TextButton(
+                              onPressed: () => loadTemplate(2),
+                              child: const Text('Континент')),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 400,
+                  height: 400,
+                  child: CustomPaint(
+                    painter: CustomGrid(cells, automata.cellTypeModel),
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    SelectableText(
+                      '${displaySeed ?? ''}',
+                      style: const TextStyle(
+                          color: Colors.teal, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: CellPanel(
+                    model: automata.cellTypeModel,
+                    key: ValueKey(automata.cellTypeModel),
+                  ),
+                )
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SizedBox(
+              width: 600,
+              height: 600,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      decoration: const InputDecoration(
+                          labelText: 'Сид (оставить пустым для случайного)'),
+                      onChanged: (s) {
+                        if (s != '') {
+                          final sInt = int.tryParse(s);
+                          if (sInt != null) {
+                            seed = sInt;
+                          } else {
+                            seed = s.hashCode;
+                          }
+                        } else {
+                          seed = null;
+                        }
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                            border: Border.all(color: Colors.teal),
+                            borderRadius: BorderRadius.circular(8.0)),
+                        child: ListView(
+                          controller: rulesListController,
+                          children: tiles,
                         ),
                       ),
                     ),
                   ),
-                  SizedBox(
-                    width: 400,
-                    height: 400,
-                    child: CustomPaint(
-                      painter: CustomGrid(cells, automata.cellTypeModel),
-                    ),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      SelectableText(
-                        '${displaySeed ?? ''}',
-                        style: const TextStyle(
-                            color: Colors.teal, fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                        onPressed: () {
+                          addRule();
+                        },
+                        child: const Text('Добавить правило')),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: CellPanel(
-                      model: automata.cellTypeModel,
-                      key: ValueKey(automata.cellTypeModel),
-                    ),
+                    child: ElevatedButton(
+                        style: const ButtonStyle(
+                            backgroundColor:
+                                MaterialStatePropertyAll(Colors.teal)),
+                        onPressed: () {
+                          final seed_ =
+                              seed ?? Random().nextInt(pow(2, 32).toInt());
+                          random.setSeed(seed_);
+
+                          if (automata.collectData()) {
+                            setState(() {
+                              cells = List.generate(
+                                  fieldWidth * fieldWidth, (_) => Cell(0));
+                            });
+                            stream = automata.makeStream(cells);
+                            streamSubscription?.cancel();
+                            streamSubscription = stream.listen((event) {
+                              setState(() {
+                                cells = List.from(event);
+                                displaySeed = seed_;
+                              });
+                            });
+                          }
+                        },
+                        child: const Text('Запустить')),
                   )
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SizedBox(
-                width: 600,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: TextField(
-                        decoration: const InputDecoration(
-                            labelText: 'Сид (оставить пустым для случайного)'),
-                        onChanged: (s) {
-                          if (s != '') {
-                            final sInt = int.tryParse(s);
-                            if (sInt != null) {
-                              seed = sInt;
-                            } else {
-                              seed = s.hashCode;
-                            }
-                          } else {
-                            seed = null;
-                          }
-                        },
-                      ),
-                    ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                              border: Border.all(color: Colors.teal),
-                              borderRadius: BorderRadius.circular(8.0)),
-                          child: ListView(
-                            controller: rulesListController,
-                            children: tiles,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: ElevatedButton(
-                          onPressed: () {
-                            addRule();
-                          },
-                          child: const Text('Добавить правило')),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: ElevatedButton(
-                          style: const ButtonStyle(
-                              backgroundColor:
-                                  MaterialStatePropertyAll(Colors.teal)),
-                          onPressed: () {
-                            final seed_ =
-                                seed ?? Random().nextInt(pow(2, 32).toInt());
-                            random.setSeed(seed_);
-
-                            if (automata.collectData()) {
-                              setState(() {
-                                cells = List.generate(
-                                    fieldWidth * fieldWidth, (_) => Cell(0));
-                              });
-                              stream = automata.makeStream(cells);
-                              streamSubscription?.cancel();
-                              streamSubscription = stream.listen((event) {
-                                setState(() {
-                                  cells = List.from(event);
-                                  displaySeed = seed_;
-                                });
-                              });
-                            }
-                          },
-                          child: const Text('Запустить')),
-                    )
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      )),
+          ),
+        ],
+      ),
     );
   }
 

@@ -112,122 +112,131 @@ class _RuleTileState extends State<RuleTile> {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              'Условие: ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const Text(
+                              'для клетки типа ',
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: IntrinsicWidth(
+                                child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                        minWidth: 60, maxWidth: 120),
+                                    child: TextField(
+                                      controller: data.values.elementAt(i)[0],
+                                    )),
+                              ),
+                            ),
+                            ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 80),
+                                child: DropdownButton<ConditionType>(
+                                    value: data.keys.elementAt(i).conditionType,
+                                    items: const <
+                                        DropdownMenuItem<ConditionType>>[
+                                      DropdownMenuItem(
+                                        value: ConditionType.always,
+                                        child: Text('всегда'),
+                                      ),
+                                      DropdownMenuItem(
+                                          value: ConditionType.near,
+                                          child: Text('рядом'))
+                                    ],
+                                    onChanged: (value) {
+                                      setState(() {
+                                        data.keys.elementAt(i).conditionType =
+                                            value!;
+                                      });
+                                    })),
+                          ],
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            setState(() {
+                              data = Map.from(
+                                  data..remove(data.keys.elementAt(i)));
+                            });
+                          },
+                          icon: const Icon(Icons.remove_rounded),
+                          color: Colors.purpleAccent,
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+                if (data.keys.elementAt(i).conditionType == ConditionType.near)
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IntrinsicWidth(
+                            child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                    minWidth: 60, maxWidth: 120),
+                                child: TextField(
+                                  controller: data.values.elementAt(i)[1],
+                                )),
+                          ),
+                        ),
+                        const Text(' клеток типа '),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IntrinsicWidth(
+                            child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                    minWidth: 60, maxWidth: 120),
+                                child: TextField(
+                                    controller: data.values.elementAt(i)[2])),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
                         children: [
                           const Text(
-                            'Условие: ',
+                            'Изменить ',
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          const Text(
-                            'для клетки типа ',
-                          ),
+                          const Text('состояние клетки на '),
                           Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: IntrinsicWidth(
                               child: ConstrainedBox(
                                   constraints: const BoxConstraints(
-                                      minWidth: 60, maxWidth: 120),
+                                      minWidth: 60, maxWidth: 60),
                                   child: TextField(
-                                    controller: data.values.elementAt(i)[0],
-                                  )),
+                                      controller: data.values.elementAt(i)[3])),
                             ),
                           ),
-                          ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 80),
-                              child: DropdownButton<ConditionType>(
-                                  value: data.keys.elementAt(i).conditionType,
-                                  items: const <
-                                      DropdownMenuItem<ConditionType>>[
-                                    DropdownMenuItem(
-                                      value: ConditionType.always,
-                                      child: Text('всегда'),
-                                    ),
-                                    DropdownMenuItem(
-                                        value: ConditionType.near,
-                                        child: Text('рядом'))
-                                  ],
-                                  onChanged: (value) {
-                                    setState(() {
-                                      data.keys.elementAt(i).conditionType =
-                                          value!;
-                                    });
-                                  })),
+                          const Text('с вероятностью '),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: IntrinsicWidth(
+                              child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                      minWidth: 60, maxWidth: 60),
+                                  child: TextField(
+                                      controller: data.values.elementAt(i)[4])),
+                            ),
+                          ),
                         ],
                       ),
-                      IconButton(
-                        onPressed: () {
-                          setState(() {
-                            data =
-                                Map.from(data..remove(data.keys.elementAt(i)));
-                          });
-                        },
-                        icon: const Icon(Icons.remove_rounded),
-                        color: Colors.purpleAccent,
-                      )
-                    ],
-                  ),
-                ),
-                if (data.keys.elementAt(i).conditionType == ConditionType.near)
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: IntrinsicWidth(
-                          child: ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                  minWidth: 60, maxWidth: 120),
-                              child: TextField(
-                                controller: data.values.elementAt(i)[1],
-                              )),
-                        ),
-                      ),
-                      const Text(' клеток типа '),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: IntrinsicWidth(
-                          child: ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                  minWidth: 60, maxWidth: 120),
-                              child: TextField(
-                                  controller: data.values.elementAt(i)[2])),
-                        ),
-                      ),
-                    ],
-                  ),
-                Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      children: [
-                        const Text(
-                          'Изменить ',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const Text('состояние клетки на '),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: IntrinsicWidth(
-                            child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                    minWidth: 60, maxWidth: 60),
-                                child: TextField(
-                                    controller: data.values.elementAt(i)[3])),
-                          ),
-                        ),
-                        const Text('с вероятностью '),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: IntrinsicWidth(
-                            child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                    minWidth: 60, maxWidth: 60),
-                                child: TextField(
-                                    controller: data.values.elementAt(i)[4])),
-                          ),
-                        ),
-                      ],
                     )),
               ],
             ),
