@@ -3,33 +3,36 @@ import 'utils.dart' as utils;
 
 import 'serialize.dart';
 
-enum ConditionType { always, near }
+enum ConditionType { always, near, at }
 
 class Condition implements ISerializable {
   ConditionType conditionType;
-  List<int> count;
-  int nearType;
+  List<int>? count;
+  List<int>? positions;
+  int? nearType;
   int checkType;
   int newType;
   double chance;
 
   Condition(this.conditionType, this.count, this.checkType, this.nearType,
-      this.newType, this.chance);
+      this.newType, this.chance, this.positions);
   Condition.always(this.chance, this.checkType, this.newType)
-      : conditionType = ConditionType.always,
-        count = [1, 2, 3],
-        nearType = 0;
+      : conditionType = ConditionType.always;
+
   Condition.near(
       this.count, this.nearType, this.checkType, this.newType, this.chance)
       : conditionType = ConditionType.near;
-
+  Condition.at(
+      this.positions, this.nearType, this.checkType, this.newType, this.chance)
+      : conditionType = ConditionType.at;
   Condition.fromJson(Map<String, dynamic> json)
       : conditionType = ConditionType.values[json['conditionType']],
-        count = json['count'].cast<int>(),
+        count = (json['count'] ?? []).cast<int>(),
         nearType = json['nearType'],
         checkType = json['checkType'],
         newType = json['newType'],
-        chance = json['chance'];
+        chance = json['chance'],
+        positions = json['positions'] ?? [];
 
   @override
   Map<String, dynamic> toJson() => {
@@ -39,6 +42,7 @@ class Condition implements ISerializable {
         'checkType': checkType,
         'newType': newType,
         'chance': chance,
+        'positions': positions
       };
 }
 
@@ -54,20 +58,38 @@ class RuleModel implements ISerializable {
     for (var c in conditions) {
       cfs.add(ConditionFunc(c.checkType, (int i, List<Cell> cells) {
         final r = utils.random.rand.nextDouble();
-        if ((c.conditionType == ConditionType.always ||
-                cells[i].type == c.checkType) &&
-            r < c.chance) {
-          final l = c.count;
-          final n = utils.findNearby(
-              i,
-              cells,
-              c.nearType,
-              utils.automataModel.connectSides,
-              utils.automataModel.connectTopDown);
-          if (c.conditionType == ConditionType.always || l.contains(n)) {
-            return Cell(c.newType);
+        final n = utils.findNearby(
+            i,
+            cells,
+            c.nearType ?? 0,
+            utils.automataModel.connectSides,
+            utils.automataModel.connectTopDown);
+        final atPos = utils.checkIfAtPos(
+            i,
+            c.positions ?? [],
+            cells,
+            c.nearType ?? 0,
+            utils.automataModel.connectSides,
+            utils.automataModel.connectTopDown);
+
+        if (r < c.chance) {
+          switch (c.conditionType) {
+            case ConditionType.always:
+              return Cell(c.newType);
+            case ConditionType.near:
+              if (c.count?.contains(n) ?? false) {
+                return Cell(c.newType);
+              }
+              return Cell(cells[i].type);
+            case ConditionType.at:
+              if (atPos) {
+                return Cell(c.newType);
+              }
+              return Cell(cells[i].type);
+            default:
           }
         }
+
         return Cell(cells[i].type);
       }));
     }

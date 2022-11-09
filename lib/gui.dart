@@ -54,7 +54,7 @@ class _RuleTileState extends State<RuleTile> {
                     children: [
                       Text(
                         '${widget.index}. Выполнить ',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Padding(
                         padding: const EdgeInsets.all(8.0),
@@ -83,7 +83,7 @@ class _RuleTileState extends State<RuleTile> {
                   setState(() {
                     data.addAll({
                       Condition.always(0.5, 0, 1):
-                          List.generate(5, (index) => TextEditingController())
+                          List.generate(6, (index) => TextEditingController())
                     });
                   });
                 },
@@ -138,7 +138,8 @@ class _RuleTileState extends State<RuleTile> {
                               ),
                             ),
                             ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 80),
+                                constraints:
+                                    const BoxConstraints(maxWidth: 105),
                                 child: DropdownButton<ConditionType>(
                                     value: data.keys.elementAt(i).conditionType,
                                     items: const <
@@ -149,7 +150,10 @@ class _RuleTileState extends State<RuleTile> {
                                       ),
                                       DropdownMenuItem(
                                           value: ConditionType.near,
-                                          child: Text('рядом'))
+                                          child: Text('рядом')),
+                                      DropdownMenuItem(
+                                          value: ConditionType.at,
+                                          child: Text('в позиции')),
                                     ],
                                     onChanged: (value) {
                                       setState(() {
@@ -190,6 +194,36 @@ class _RuleTileState extends State<RuleTile> {
                           ),
                         ),
                         const Text(' клеток типа '),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IntrinsicWidth(
+                            child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                    minWidth: 60, maxWidth: 120),
+                                child: TextField(
+                                    controller: data.values.elementAt(i)[2])),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (data.keys.elementAt(i).conditionType == ConditionType.at)
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: IntrinsicWidth(
+                            child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                    minWidth: 60, maxWidth: 120),
+                                child: TextField(
+                                  controller: data.values.elementAt(i)[5],
+                                )),
+                          ),
+                        ),
+                        const Text(' клетка типа '),
                         Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: IntrinsicWidth(
@@ -248,6 +282,14 @@ class _RuleTileState extends State<RuleTile> {
   }
 
   List<List<TextEditingController>> initTextControllers() {
+    /*
+    0. checkType
+    1. count
+    2. nearType
+    3. newType
+    4. chance
+    5. positions
+    */
     List<List<TextEditingController>> controllers = [];
     for (int i = 0; i < widget.model.conditions.length; i++) {
       controllers.add([]);
@@ -255,14 +297,16 @@ class _RuleTileState extends State<RuleTile> {
           text: widget.model.conditions[i].checkType.toString()));
       controllers[i].add(TextEditingController(
           text: widget.model.conditions[i].count
-              .toString()
+              ?.toString()
               .replaceAll(RegExp(r'\[|\]'), '')));
       controllers[i].add(TextEditingController(
-          text: widget.model.conditions[i].nearType.toString()));
+          text: widget.model.conditions[i].nearType?.toString()));
       controllers[i].add(TextEditingController(
           text: widget.model.conditions[i].newType.toString()));
       controllers[i].add(TextEditingController(
           text: widget.model.conditions[i].chance.toString()));
+      controllers[i].add(TextEditingController(
+          text: widget.model.conditions[i].positions?.toString()));
     }
     return controllers;
   }
@@ -275,18 +319,25 @@ class _RuleTileState extends State<RuleTile> {
         var conditionType = e.key.conditionType;
         var count = <int>[];
         var checkType = int.parse(e.value[0].text);
-        int? nearType;
+
+        var nearType = int.tryParse(e.value[2].text);
         if (conditionType == ConditionType.near) {
           for (var i in e.value[1].text.split(',')) {
             count.add(int.parse(i));
           }
-          nearType = int.parse(e.value[2].text);
         }
 
         var newType = int.parse(e.value[3].text);
         var chance = double.parse(e.value[4].text);
-        widget.model.conditions.add(Condition(
-            conditionType, count, checkType, nearType ?? 0, newType, chance));
+        var positions = <int>[];
+        if (conditionType == ConditionType.at) {
+          for (var i in e.value[5].text.split(',')) {
+            positions.add(int.parse(i));
+          }
+        }
+
+        widget.model.conditions.add(Condition(conditionType, count, checkType,
+            nearType ?? 0, newType, chance, positions));
       }
       return true;
     } catch (e) {
