@@ -49,9 +49,9 @@ class RuleModel implements ISerializable {
   RuleModel(this.times, this.conditions);
 
   List<Cell> Function(List<Cell>) makeFunction(List<Cell> cells) {
-    Map<int, Function> cfs = {};
+    List<ConditionFunc> cfs = [];
     for (var c in conditions) {
-      cfs[c.checkType] = (int i, List<Cell> cells) {
+      cfs.add(ConditionFunc(c.checkType, (int i, List<Cell> cells) {
         final r = random.rand.nextDouble();
         if ((c.conditionType == ConditionType.always ||
                 cells[i].type == c.checkType) &&
@@ -63,18 +63,19 @@ class RuleModel implements ISerializable {
           }
         }
         return Cell(cells[i].type);
-      };
+      }));
     }
 
     List<Cell> f(List<Cell> cells) {
       List<Cell> newCells_ = [];
       for (var i = 0; i < cells.length; i++) {
         var type = cells[i].type;
-        if (cfs[type] == null) {
-          newCells_.add(Cell(type));
-        } else {
-          newCells_.add(cfs[type]!(i, cells));
+        var newCell = Cell(type);
+        for (var func in cfs.where((f) => f.checkType == type)) {
+          newCell = func(i, cells);
+          if (newCell.type != type) break;
         }
+        newCells_.add(newCell);
       }
       return newCells_;
     }
@@ -147,4 +148,12 @@ class CellularAutomataModel implements ISerializable {
         'rules': rules.map((e) => e.toJson()).toList(),
         'cellTypeModel': cellTypeModel.toJson(),
       };
+}
+
+class ConditionFunc {
+  int checkType;
+  Cell Function(int i, List<Cell> cells) function;
+
+  ConditionFunc(this.checkType, this.function);
+  Cell call(int i, List<Cell> cells) => function(i, cells);
 }
