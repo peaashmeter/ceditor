@@ -61,14 +61,13 @@ class _EditorState extends State<Editor> {
   int? displaySeed;
 
   late List<RuleTile> tiles;
-  late CellularAutomataModel automata;
   late Stream<List<Cell>> stream;
   StreamSubscription? streamSubscription;
   late ScrollController rulesListController;
 
   @override
   void initState() {
-    automata = CellularAutomataModel()
+    automataModel = CellularAutomataModel()
       ..rules = [
         RuleModel(
           1,
@@ -77,7 +76,7 @@ class _EditorState extends State<Editor> {
           ],
         ),
       ];
-    tiles = generateTiles(automata);
+    tiles = generateTiles(automataModel);
     rulesListController = ScrollController();
 
     super.initState();
@@ -91,7 +90,7 @@ class _EditorState extends State<Editor> {
         index: i + 1,
         model: m,
         deleteFunction: deleteRule,
-        key: ValueKey(automata.rules[i]),
+        key: ValueKey(automataModel.rules[i]),
       ));
     }
     return tiles;
@@ -111,185 +110,12 @@ class _EditorState extends State<Editor> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
-        SizedBox(
-          width: 400,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 32),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    ElevatedButton(
-                        onPressed: () {
-                          final json = jsonEncode(automata.toJson());
-                          final bytes = utf8.encode(json);
-                          final blob = Blob([bytes]);
-                          final url = Url.createObjectUrlFromBlob(blob);
-                          final anchor =
-                              document.createElement('a') as AnchorElement
-                                ..href = url
-                                ..style.display = 'none'
-                                ..download = 'automaton.json';
-                          document.body?.children.add(anchor);
-
-                          anchor.click();
-
-                          document.body?.children.remove(anchor);
-                          Url.revokeObjectUrl(url);
-                        },
-                        child: const Text('Сохранить')),
-                    ElevatedButton(
-                        onPressed: () async {
-                          var result = await FilePicker.platform.pickFiles(
-                              type: FileType.custom,
-                              allowedExtensions: ['json']);
-
-                          if (result != null) {
-                            final bytes = result.files.first.bytes;
-                            final json = utf8.decode(bytes!);
-                            final asMap = jsonDecode(json);
-                            final automaton_ =
-                                CellularAutomataModel.fromJson(asMap);
-                            loadAutomaton(automaton_);
-                          }
-                        },
-                        child: const Text('Загрузить')),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(
-                  bottom: 8.0,
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                      border: Border.all(color: Colors.teal),
-                      borderRadius: BorderRadius.circular(8.0)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        TextButton(
-                            onPressed: () => loadTemplate(0),
-                            child: const Text('Жизнь')),
-                        TextButton(
-                            onPressed: () => loadTemplate(1),
-                            child: const Text('День и ночь')),
-                        TextButton(
-                            onPressed: () => loadTemplate(2),
-                            child: const Text('Континент')),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(
-                width: 400,
-                height: 400,
-                child: CustomPaint(
-                  painter: CustomGrid(cells, automata.cellTypeModel),
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  SelectableText(
-                    '${displaySeed ?? ''}',
-                    style: const TextStyle(
-                        color: Colors.teal, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: CellPanel(
-                  model: automata.cellTypeModel,
-                  key: ValueKey(automata.cellTypeModel),
-                ),
-              )
-            ],
-          ),
-        ),
+        drawPanel(),
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: SizedBox(
             width: 600,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TextField(
-                    decoration: const InputDecoration(
-                        labelText: 'Сид (оставить пустым для случайного)'),
-                    onChanged: (s) {
-                      if (s != '') {
-                        final sInt = int.tryParse(s);
-                        if (sInt != null) {
-                          seed = sInt;
-                        } else {
-                          seed = s.hashCode;
-                        }
-                      } else {
-                        seed = null;
-                      }
-                    },
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                          border: Border.all(color: Colors.teal),
-                          borderRadius: BorderRadius.circular(8.0)),
-                      child: ListView(
-                        controller: rulesListController,
-                        children: tiles,
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                      onPressed: () {
-                        addRule();
-                      },
-                      child: const Text('Добавить правило')),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                      style: const ButtonStyle(
-                          backgroundColor:
-                              MaterialStatePropertyAll(Colors.teal)),
-                      onPressed: () {
-                        final seed_ =
-                            seed ?? Random().nextInt(pow(2, 32).toInt());
-                        random.setSeed(seed_);
-
-                        if (automata.collectData()) {
-                          setState(() {
-                            cells = List.generate(
-                                fieldWidth * fieldWidth, (_) => Cell(0));
-                          });
-                          stream = automata.makeStream(cells);
-                          streamSubscription?.cancel();
-                          streamSubscription = stream.listen((event) {
-                            setState(() {
-                              cells = List.from(event);
-                              displaySeed = seed_;
-                            });
-                          });
-                        }
-                      },
-                      child: const Text('Запустить')),
-                )
-              ],
-            ),
+            child: rulePanel(),
           ),
         ),
       ],
@@ -302,190 +128,216 @@ class _EditorState extends State<Editor> {
       child: ListView(
         shrinkWrap: true,
         children: [
-          SizedBox(
-            width: 400,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+          drawPanel(),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SizedBox(width: 600, height: 600, child: rulePanel()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Column rulePanel() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  decoration: const InputDecoration(
+                      labelText: 'Сид (оставить пустым для случайного)'),
+                  onChanged: (s) {
+                    if (s != '') {
+                      final sInt = int.tryParse(s);
+                      if (sInt != null) {
+                        seed = sInt;
+                      } else {
+                        seed = s.hashCode;
+                      }
+                    } else {
+                      seed = null;
+                    }
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: IconButton(
+                    onPressed: () {
+                      showSettingsDialog();
+                    },
+                    icon: const Icon(Icons.settings_rounded)),
+              )
+            ],
+          ),
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              decoration: BoxDecoration(
+                  border: Border.all(color: Colors.teal),
+                  borderRadius: BorderRadius.circular(8.0)),
+              child: ListView(
+                controller: rulesListController,
+                children: tiles,
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ElevatedButton(
+              onPressed: () {
+                addRule();
+              },
+              child: const Text('Добавить правило')),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ElevatedButton(
+              style: const ButtonStyle(
+                  backgroundColor: MaterialStatePropertyAll(Colors.teal)),
+              onPressed: () {
+                final seed_ = seed ?? Random().nextInt(pow(2, 32).toInt());
+                random.setSeed(seed_);
+
+                if (automataModel.collectData()) {
+                  setState(() {
+                    cells =
+                        List.generate(fieldWidth * fieldWidth, (_) => Cell(0));
+                  });
+                  stream = automataModel.makeStream(cells);
+                  streamSubscription?.cancel();
+                  streamSubscription = stream.listen((event) {
+                    setState(() {
+                      cells = List.from(event);
+                      displaySeed = seed_;
+                    });
+                  });
+                }
+              },
+              child: const Text('Запустить')),
+        )
+      ],
+    );
+  }
+
+  SizedBox drawPanel() {
+    return SizedBox(
+      width: 400,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 32),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 32),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      ElevatedButton(
-                          onPressed: () {
-                            final json = jsonEncode(automata.toJson());
-                            final bytes = utf8.encode(json);
-                            final blob = Blob([bytes]);
-                            final url = Url.createObjectUrlFromBlob(blob);
-                            final anchor =
-                                document.createElement('a') as AnchorElement
-                                  ..href = url
-                                  ..style.display = 'none'
-                                  ..download = 'automaton.json';
-                            document.body?.children.add(anchor);
+                ElevatedButton(
+                    onPressed: () {
+                      final json = jsonEncode(automataModel.toJson());
+                      final bytes = utf8.encode(json);
+                      final blob = Blob([bytes]);
+                      final url = Url.createObjectUrlFromBlob(blob);
+                      final anchor =
+                          document.createElement('a') as AnchorElement
+                            ..href = url
+                            ..style.display = 'none'
+                            ..download = 'automaton.json';
+                      document.body?.children.add(anchor);
 
-                            anchor.click();
+                      anchor.click();
 
-                            document.body?.children.remove(anchor);
-                            Url.revokeObjectUrl(url);
-                          },
-                          child: const Text('Сохранить')),
-                      ElevatedButton(
-                          onPressed: () async {
-                            var result = await FilePicker.platform.pickFiles(
-                                type: FileType.custom,
-                                allowedExtensions: ['json']);
+                      document.body?.children.remove(anchor);
+                      Url.revokeObjectUrl(url);
+                    },
+                    child: const Text('Сохранить')),
+                ElevatedButton(
+                    onPressed: () async {
+                      var result = await FilePicker.platform.pickFiles(
+                          type: FileType.custom, allowedExtensions: ['json']);
 
-                            if (result != null) {
-                              final bytes = result.files.first.bytes;
-                              final json = utf8.decode(bytes!);
-                              final asMap = jsonDecode(json);
-                              final automaton_ =
-                                  CellularAutomataModel.fromJson(asMap);
-                              loadAutomaton(automaton_);
-                            }
-                          },
-                          child: const Text('Загрузить')),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: 8.0,
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                        border: Border.all(color: Colors.teal),
-                        borderRadius: BorderRadius.circular(8.0)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          TextButton(
-                              onPressed: () => loadTemplate(0),
-                              child: const Text('Жизнь')),
-                          TextButton(
-                              onPressed: () => loadTemplate(1),
-                              child: const Text('День и ночь')),
-                          TextButton(
-                              onPressed: () => loadTemplate(2),
-                              child: const Text('Континент')),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 400,
-                  height: 400,
-                  child: CustomPaint(
-                    painter: CustomGrid(cells, automata.cellTypeModel),
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    SelectableText(
-                      '${displaySeed ?? ''}',
-                      style: const TextStyle(
-                          color: Colors.teal, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: CellPanel(
-                    model: automata.cellTypeModel,
-                    key: ValueKey(automata.cellTypeModel),
-                  ),
-                )
+                      if (result != null) {
+                        final bytes = result.files.first.bytes;
+                        final json = utf8.decode(bytes!);
+                        final asMap = jsonDecode(json);
+                        final automaton_ =
+                            CellularAutomataModel.fromJson(asMap);
+                        loadAutomaton(automaton_);
+                      }
+                    },
+                    child: const Text('Загрузить')),
               ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: SizedBox(
-              width: 600,
-              height: 600,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: TextField(
-                      decoration: const InputDecoration(
-                          labelText: 'Сид (оставить пустым для случайного)'),
-                      onChanged: (s) {
-                        if (s != '') {
-                          final sInt = int.tryParse(s);
-                          if (sInt != null) {
-                            seed = sInt;
-                          } else {
-                            seed = s.hashCode;
-                          }
-                        } else {
-                          seed = null;
-                        }
-                      },
-                    ),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                            border: Border.all(color: Colors.teal),
-                            borderRadius: BorderRadius.circular(8.0)),
-                        child: ListView(
-                          controller: rulesListController,
-                          children: tiles,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                        onPressed: () {
-                          addRule();
-                        },
-                        child: const Text('Добавить правило')),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                        style: const ButtonStyle(
-                            backgroundColor:
-                                MaterialStatePropertyAll(Colors.teal)),
-                        onPressed: () {
-                          final seed_ =
-                              seed ?? Random().nextInt(pow(2, 32).toInt());
-                          random.setSeed(seed_);
-
-                          if (automata.collectData()) {
-                            setState(() {
-                              cells = List.generate(
-                                  fieldWidth * fieldWidth, (_) => Cell(0));
-                            });
-                            stream = automata.makeStream(cells);
-                            streamSubscription?.cancel();
-                            streamSubscription = stream.listen((event) {
-                              setState(() {
-                                cells = List.from(event);
-                                displaySeed = seed_;
-                              });
-                            });
-                          }
-                        },
-                        child: const Text('Запустить')),
-                  )
-                ],
+            padding: const EdgeInsets.only(
+              bottom: 8.0,
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                  border: Border.all(color: Colors.teal),
+                  borderRadius: BorderRadius.circular(8.0)),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                        onPressed: () => loadTemplate(0),
+                        child: const Text('Жизнь')),
+                    TextButton(
+                        onPressed: () => loadTemplate(1),
+                        child: const Text('День и ночь')),
+                    TextButton(
+                        onPressed: () => loadTemplate(2),
+                        child: const Text('Континент')),
+                  ],
+                ),
               ),
             ),
           ),
+          SizedBox(
+            width: 400,
+            height: 400,
+            child: CustomPaint(
+              painter: CustomGrid(cells, automataModel.cellTypeModel),
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              SelectableText(
+                '${displaySeed ?? ''}',
+                style: const TextStyle(
+                    color: Colors.teal, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: CellPanel(
+              model: automataModel.cellTypeModel,
+              key: ValueKey(automataModel.cellTypeModel),
+            ),
+          )
         ],
       ),
+    );
+  }
+
+  Future showSettingsDialog() {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return SettingsDialog(
+          automata: automataModel,
+        );
+      },
     );
   }
 
@@ -494,8 +346,9 @@ class _EditorState extends State<Editor> {
     cells = List.generate(fieldWidth * fieldWidth, (_) => Cell(0));
 
     setState(() {
-      automata = CellularAutomataModel.copy(templates[i]);
-      tiles = generateTiles(automata);
+      automataModel = CellularAutomataModel.copy(templates[i]);
+
+      tiles = generateTiles(automataModel);
     });
     rulesListController.jumpTo(rulesListController.position.minScrollExtent);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -511,8 +364,9 @@ class _EditorState extends State<Editor> {
     cells = List.generate(fieldWidth * fieldWidth, (_) => Cell(0));
 
     setState(() {
-      automata = CellularAutomataModel.copy(automataModel);
-      tiles = generateTiles(automata);
+      automataModel = CellularAutomataModel.copy(automataModel);
+
+      tiles = generateTiles(automataModel);
     });
     rulesListController.jumpTo(rulesListController.position.minScrollExtent);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -524,7 +378,7 @@ class _EditorState extends State<Editor> {
   }
 
   void deleteRule(RuleTile ruleTile) {
-    automata.deleteRule(ruleTile.model);
+    automataModel.deleteRule(ruleTile.model);
     setState(() {
       List<RuleTile> newTiles = [];
       for (var i = 0; i < tiles.length; i++) {
@@ -542,7 +396,7 @@ class _EditorState extends State<Editor> {
 
   void addRule() {
     final r = RuleModel(1, [Condition.always(0.5, 0, 1)]);
-    automata.addRule(r);
+    automataModel.addRule(r);
     setState(() {
       tiles = List.from(tiles
         ..add(RuleTile(
@@ -551,6 +405,57 @@ class _EditorState extends State<Editor> {
           deleteFunction: deleteRule,
         )));
     });
+  }
+}
+
+class SettingsDialog extends StatefulWidget {
+  const SettingsDialog({super.key, required this.automata});
+
+  final CellularAutomataModel automata;
+  @override
+  State<SettingsDialog> createState() => _SettingsDialogState();
+}
+
+class _SettingsDialogState extends State<SettingsDialog> {
+  late bool connectTopDown;
+  late bool connectSides;
+
+  @override
+  void initState() {
+    connectTopDown = automataModel.connectTopDown;
+    connectSides = automataModel.connectSides;
+
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Параметры'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CheckboxListTile(
+              title: const Text('Соединить по вертикали'),
+              value: connectTopDown,
+              onChanged: (value) {
+                setState(() {
+                  connectTopDown = value!;
+                });
+                automataModel.connectTopDown = value!;
+              }),
+          CheckboxListTile(
+              title: const Text('Соединить по горизонтали'),
+              value: connectSides,
+              onChanged: (value) {
+                setState(() {
+                  connectSides = value!;
+                });
+                automataModel.connectSides = value!;
+              }),
+        ],
+      ),
+    );
   }
 }
 

@@ -1,5 +1,5 @@
 import 'cell.dart';
-import 'utils.dart';
+import 'utils.dart' as utils;
 
 import 'serialize.dart';
 
@@ -45,6 +45,7 @@ class Condition implements ISerializable {
 class RuleModel implements ISerializable {
   bool Function()? collectData;
   int times;
+
   List<Condition> conditions;
   RuleModel(this.times, this.conditions);
 
@@ -52,12 +53,17 @@ class RuleModel implements ISerializable {
     List<ConditionFunc> cfs = [];
     for (var c in conditions) {
       cfs.add(ConditionFunc(c.checkType, (int i, List<Cell> cells) {
-        final r = random.rand.nextDouble();
+        final r = utils.random.rand.nextDouble();
         if ((c.conditionType == ConditionType.always ||
                 cells[i].type == c.checkType) &&
             r < c.chance) {
           final l = c.count;
-          final n = findNearby(i, cells, c.nearType);
+          final n = utils.findNearby(
+              i,
+              cells,
+              c.nearType,
+              utils.automataModel.connectSides,
+              utils.automataModel.connectTopDown);
           if (c.conditionType == ConditionType.always || l.contains(n)) {
             return Cell(c.newType);
           }
@@ -100,6 +106,8 @@ class RuleModel implements ISerializable {
 class CellularAutomataModel implements ISerializable {
   late List<RuleModel> rules;
   late CellTypeModel cellTypeModel;
+  bool connectSides = true;
+  bool connectTopDown = true;
 
   CellularAutomataModel()
       : rules = [],
@@ -141,12 +149,16 @@ class CellularAutomataModel implements ISerializable {
   CellularAutomataModel.fromJson(Map<String, dynamic> json)
       : rules = List.generate(json['rules'].length,
             (index) => RuleModel.fromJson(json['rules'][index])),
-        cellTypeModel = CellTypeModel.fromJson(json['cellTypeModel']);
+        cellTypeModel = CellTypeModel.fromJson(json['cellTypeModel']),
+        connectSides = json['connectSides'] ?? true,
+        connectTopDown = json['connectTopDown'] ?? true;
 
   @override
   Map<String, dynamic> toJson() => {
         'rules': rules.map((e) => e.toJson()).toList(),
         'cellTypeModel': cellTypeModel.toJson(),
+        'connectSides': connectSides,
+        'connectTopDown': connectTopDown
       };
 }
 

@@ -1,9 +1,12 @@
 import 'dart:math';
 
+import 'package:ceditor/model.dart';
+
 import 'cell.dart';
 import 'main.dart';
 
 late final SeededRandom random;
+late CellularAutomataModel automataModel;
 
 class SeededRandom {
   Random rand;
@@ -15,7 +18,15 @@ class SeededRandom {
   }
 }
 
-int findNearby(int index, List<Cell> cells, int type) {
+int findNearby(int index, List<Cell> cells, int type, bool connectSides,
+    bool connectTopDown) {
+  ///Cartesian To Linear
+  int ctl(int x, int y) {
+    x = connectSides ? x % fieldWidth : x;
+    y = connectTopDown ? y % fieldWidth : y;
+    return fieldWidth * y + x;
+  }
+
   final x = index % fieldWidth;
   final y = index ~/ fieldWidth;
 
@@ -33,28 +44,12 @@ int findNearby(int index, List<Cell> cells, int type) {
   indices.add(ctl(x + 1, y + 1));
 
   //удаление несуществующих
-  //indices.removeWhere((i) => i < 0 || i >= fieldWidth * fieldWidth);
-
-  //Тороидальная форма
-  // for (var i = 0; i < indices.length; i++) {
-  //   if (indices[i] < 0) {
-  //     indices[i] = fieldWidth * fieldWidth - indices[i];
-  //   }
-  //   if (indices[i] >= fieldWidth * fieldWidth) {
-  //     indices[i] -= fieldWidth * fieldWidth;
-  //   }
-  // }
+  indices
+      .removeWhere((i) => i < 0 || i >= fieldWidth * fieldWidth || i == index);
 
   int c = 0;
   for (var i in indices) {
     if (cells[i].type == type) c++;
   }
   return c;
-}
-
-///Cartesian To Linear
-int ctl(int x, int y) {
-  x %= fieldWidth;
-  y %= fieldWidth;
-  return fieldWidth * y + x;
 }
