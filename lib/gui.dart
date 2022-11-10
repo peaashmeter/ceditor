@@ -311,7 +311,9 @@ class _RuleTileState extends State<RuleTile>
       controllers[i].add(TextEditingController(
           text: widget.model.conditions[i].chance.toString()));
       controllers[i].add(TextEditingController(
-          text: widget.model.conditions[i].positions?.toString()));
+          text: widget.model.conditions[i].positions
+              ?.toString()
+              .replaceAll(RegExp(r'\[|\]'), '')));
     }
     return controllers;
   }

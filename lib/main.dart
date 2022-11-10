@@ -90,7 +90,7 @@ class _EditorState extends State<Editor> {
         index: i + 1,
         model: m,
         deleteFunction: deleteRule,
-        key: ValueKey(automataModel.rules[i]),
+        key: ValueKey(model.rules[i]),
       ));
     }
     return tiles;
@@ -345,9 +345,8 @@ class _EditorState extends State<Editor> {
     streamSubscription?.cancel();
     cells = List.generate(fieldWidth * fieldWidth, (_) => Cell(0));
 
+    automataModel = CellularAutomataModel.copy(templates[i]);
     setState(() {
-      automataModel = CellularAutomataModel.copy(templates[i]);
-
       tiles = generateTiles(automataModel);
     });
     rulesListController.jumpTo(rulesListController.position.minScrollExtent);
@@ -359,13 +358,12 @@ class _EditorState extends State<Editor> {
     });
   }
 
-  void loadAutomaton(CellularAutomataModel automataModel) {
+  void loadAutomaton(CellularAutomataModel model) {
     streamSubscription?.cancel();
     cells = List.generate(fieldWidth * fieldWidth, (_) => Cell(0));
 
+    automataModel = CellularAutomataModel.copy(model);
     setState(() {
-      automataModel = CellularAutomataModel.copy(automataModel);
-
       tiles = generateTiles(automataModel);
     });
     rulesListController.jumpTo(rulesListController.position.minScrollExtent);

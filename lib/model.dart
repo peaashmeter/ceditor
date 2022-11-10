@@ -32,7 +32,7 @@ class Condition implements ISerializable {
         checkType = json['checkType'],
         newType = json['newType'],
         chance = json['chance'],
-        positions = (json['count'] ?? []).cast<int>();
+        positions = (json['positions'] ?? []).cast<int>();
 
   @override
   Map<String, dynamic> toJson() => {
@@ -137,7 +137,9 @@ class CellularAutomataModel implements ISerializable {
   CellularAutomataModel.copy(CellularAutomataModel from)
       : rules = List.from(from.rules),
         cellTypeModel =
-            CellTypeModel.colors(List.from(from.cellTypeModel.colors));
+            CellTypeModel.colors(List.from(from.cellTypeModel.colors)),
+        connectSides = from.connectSides,
+        connectTopDown = from.connectTopDown;
 
   void addRule(RuleModel r) {
     rules.add(r);
@@ -162,7 +164,7 @@ class CellularAutomataModel implements ISerializable {
       for (int t = 0; t < rule.times; t++) {
         final f = rule.makeFunction(newCells);
         newCells = f(newCells);
-        await Future.delayed(const Duration(milliseconds: 50));
+        await Future.delayed(const Duration(milliseconds: 30));
         yield newCells;
       }
     }
