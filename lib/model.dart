@@ -32,7 +32,7 @@ class Condition implements ISerializable {
         checkType = json['checkType'],
         newType = json['newType'],
         chance = json['chance'],
-        positions = json['positions'] ?? [];
+        positions = (json['count'] ?? []).cast<int>();
 
   @override
   Map<String, dynamic> toJson() => {

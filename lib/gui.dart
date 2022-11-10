@@ -19,9 +19,13 @@ class RuleTile extends StatefulWidget {
   State<RuleTile> createState() => _RuleTileState();
 }
 
-class _RuleTileState extends State<RuleTile> {
+class _RuleTileState extends State<RuleTile>
+    with AutomaticKeepAliveClientMixin {
   late Map<Condition, List<TextEditingController>> data;
   late TextEditingController timesController;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -37,6 +41,7 @@ class _RuleTileState extends State<RuleTile> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Material(
