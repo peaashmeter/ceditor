@@ -314,9 +314,7 @@ class _EditorState extends State<Editor> {
                       generatePixels(cells.value, automataModel.cellTypeModel)),
                   builder: (context, snapshot) {
                     if (snapshot.hasData) {
-                      return CustomPaint(
-                        painter: CustomGrid(snapshot.data!),
-                      );
+                      return CustomPaint(painter: CustomGrid(snapshot.data!));
                     } else {
                       return const Placeholder();
                     }

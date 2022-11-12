@@ -58,30 +58,30 @@ class RuleModel implements ISerializable {
     for (var c in conditions) {
       cfs.add(ConditionFunc(c.checkType, (int i, List<Cell> cells) {
         final r = utils.random.rand.nextDouble();
-        final n = utils.findNearby(
-            i,
-            cells,
-            c.nearType ?? 0,
-            utils.automataModel.connectSides,
-            utils.automataModel.connectTopDown);
-        final atPos = utils.checkIfAtPos(
-            i,
-            c.positions ?? [],
-            cells,
-            c.nearType ?? 0,
-            utils.automataModel.connectSides,
-            utils.automataModel.connectTopDown);
 
         if (r < c.chance) {
           switch (c.conditionType) {
             case ConditionType.always:
               return Cell(c.newType);
             case ConditionType.near:
+              final n = utils.findNearby(
+                  i,
+                  cells,
+                  c.nearType ?? 0,
+                  utils.automataModel.connectSides,
+                  utils.automataModel.connectTopDown);
               if (c.count?.contains(n) ?? false) {
                 return Cell(c.newType);
               }
               return Cell(cells[i].type);
             case ConditionType.at:
+              final atPos = utils.checkIfAtPos(
+                  i,
+                  c.positions ?? [],
+                  cells,
+                  c.nearType ?? 0,
+                  utils.automataModel.connectSides,
+                  utils.automataModel.connectTopDown);
               if (atPos) {
                 return Cell(c.newType);
               }
