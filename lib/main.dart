@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 // ignore: avoid_web_libraries_in_flutter
-import 'dart:html' hide File;
+//import 'dart:html' hide File;
 import 'dart:math';
 
 import 'package:file_picker/file_picker.dart';
@@ -11,8 +11,10 @@ import 'package:flutter/material.dart';
 import 'cell.dart';
 import 'gui.dart';
 import 'model.dart';
+import 'rendering.dart';
 import 'template.dart';
 import 'utils.dart';
+import 'dart:ui' as ui;
 
 const fieldWidth = 100;
 
@@ -241,19 +243,19 @@ class _EditorState extends State<Editor> {
                     onPressed: () {
                       final json = jsonEncode(automataModel.toJson());
                       final bytes = utf8.encode(json);
-                      final blob = Blob([bytes]);
-                      final url = Url.createObjectUrlFromBlob(blob);
-                      final anchor =
-                          document.createElement('a') as AnchorElement
-                            ..href = url
-                            ..style.display = 'none'
-                            ..download = 'automaton.json';
-                      document.body?.children.add(anchor);
+                      // final blob = Blob([bytes]);
+                      // final url = Url.createObjectUrlFromBlob(blob);
+                      // final anchor =
+                      //     document.createElement('a') as AnchorElement
+                      //       ..href = url
+                      //       ..style.display = 'none'
+                      //       ..download = 'automaton.json';
+                      // document.body?.children.add(anchor);
 
-                      anchor.click();
+                      // anchor.click();
 
-                      document.body?.children.remove(anchor);
-                      Url.revokeObjectUrl(url);
+                      // document.body?.children.remove(anchor);
+                      // Url.revokeObjectUrl(url);
                     },
                     child: const Text('Сохранить')),
                 ElevatedButton(
@@ -302,12 +304,21 @@ class _EditorState extends State<Editor> {
             ),
           ),
           SizedBox(
-            width: 400,
-            height: 400,
-            child: CustomPaint(
-              painter: CustomGrid(cells, automataModel.cellTypeModel),
-            ),
-          ),
+              width: 400,
+              height: 400,
+              child: FutureBuilder<ui.Image>(
+                future: makeGridImage(
+                    generatePixels(cells, automataModel.cellTypeModel)),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return CustomPaint(
+                      painter: CustomGrid(snapshot.data!),
+                    );
+                  } else {
+                    return const Placeholder();
+                  }
+                },
+              )),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -455,30 +466,4 @@ class _SettingsDialogState extends State<SettingsDialog> {
       ),
     );
   }
-}
-
-class CustomGrid extends CustomPainter {
-  static const cellWidth = 4.0;
-
-  final List<Cell> cells;
-  final CellTypeModel model;
-
-  CustomGrid(this.cells, this.model);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    var paint = Paint()
-      ..style = PaintingStyle.fill
-      ..isAntiAlias = false;
-
-    for (int i = 0; i < fieldWidth * fieldWidth; i++) {
-      canvas.drawRect(
-          Rect.fromLTWH((i % fieldWidth) * cellWidth,
-              (i ~/ fieldWidth) * cellWidth, cellWidth, cellWidth),
-          paint..color = model.getColor(cells[i].type));
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
