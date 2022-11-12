@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 // ignore: avoid_web_libraries_in_flutter
-//import 'dart:html' hide File;
+import 'dart:html' hide File;
 import 'dart:math';
 
 import 'package:file_picker/file_picker.dart';
@@ -57,7 +57,8 @@ class Editor extends StatefulWidget {
 
 class _EditorState extends State<Editor> {
   int gen = 0;
-  List<Cell> cells = List.generate(fieldWidth * fieldWidth, (_) => Cell(0));
+  ValueNotifier<List<Cell>> cells =
+      ValueNotifier(List.generate(fieldWidth * fieldWidth, (_) => Cell(0)));
 
   int? seed;
   int? displaySeed;
@@ -209,16 +210,16 @@ class _EditorState extends State<Editor> {
 
                 if (automataModel.collectData()) {
                   setState(() {
-                    cells =
-                        List.generate(fieldWidth * fieldWidth, (_) => Cell(0));
+                    displaySeed = seed_;
                   });
-                  stream = automataModel.makeStream(cells);
+
+                  cells.value =
+                      List.generate(fieldWidth * fieldWidth, (_) => Cell(0));
+
+                  stream = automataModel.makeStream(cells.value);
                   streamSubscription?.cancel();
                   streamSubscription = stream.listen((event) {
-                    setState(() {
-                      cells = List.from(event);
-                      displaySeed = seed_;
-                    });
+                    cells.value = List.from(event);
                   });
                 }
               },
@@ -243,19 +244,19 @@ class _EditorState extends State<Editor> {
                     onPressed: () {
                       final json = jsonEncode(automataModel.toJson());
                       final bytes = utf8.encode(json);
-                      // final blob = Blob([bytes]);
-                      // final url = Url.createObjectUrlFromBlob(blob);
-                      // final anchor =
-                      //     document.createElement('a') as AnchorElement
-                      //       ..href = url
-                      //       ..style.display = 'none'
-                      //       ..download = 'automaton.json';
-                      // document.body?.children.add(anchor);
+                      final blob = Blob([bytes]);
+                      final url = Url.createObjectUrlFromBlob(blob);
+                      final anchor =
+                          document.createElement('a') as AnchorElement
+                            ..href = url
+                            ..style.display = 'none'
+                            ..download = 'automaton.json';
+                      document.body?.children.add(anchor);
 
-                      // anchor.click();
+                      anchor.click();
 
-                      // document.body?.children.remove(anchor);
-                      // Url.revokeObjectUrl(url);
+                      document.body?.children.remove(anchor);
+                      Url.revokeObjectUrl(url);
                     },
                     child: const Text('Сохранить')),
                 ElevatedButton(
@@ -306,18 +307,21 @@ class _EditorState extends State<Editor> {
           SizedBox(
               width: 400,
               height: 400,
-              child: FutureBuilder<ui.Image>(
-                future: makeGridImage(
-                    generatePixels(cells, automataModel.cellTypeModel)),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    return CustomPaint(
-                      painter: CustomGrid(snapshot.data!),
-                    );
-                  } else {
-                    return const Placeholder();
-                  }
-                },
+              child: ValueListenableBuilder(
+                valueListenable: cells,
+                builder: (context, value, child) => FutureBuilder<ui.Image>(
+                  future: makeGridImage(
+                      generatePixels(cells.value, automataModel.cellTypeModel)),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return CustomPaint(
+                        painter: CustomGrid(snapshot.data!),
+                      );
+                    } else {
+                      return const Placeholder();
+                    }
+                  },
+                ),
               )),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -354,7 +358,7 @@ class _EditorState extends State<Editor> {
 
   void loadTemplate(int i) {
     streamSubscription?.cancel();
-    cells = List.generate(fieldWidth * fieldWidth, (_) => Cell(0));
+    cells.value = List.generate(fieldWidth * fieldWidth, (_) => Cell(0));
 
     automataModel = CellularAutomataModel.copy(templates[i]);
     setState(() {
@@ -371,7 +375,7 @@ class _EditorState extends State<Editor> {
 
   void loadAutomaton(CellularAutomataModel model) {
     streamSubscription?.cancel();
-    cells = List.generate(fieldWidth * fieldWidth, (_) => Cell(0));
+    cells.value = List.generate(fieldWidth * fieldWidth, (_) => Cell(0));
 
     automataModel = CellularAutomataModel.copy(model);
     setState(() {
