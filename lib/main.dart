@@ -390,19 +390,18 @@ class _EditorState extends State<Editor> {
 
   void deleteRule(RuleTile ruleTile) {
     automataModel.deleteRule(ruleTile.model);
-    setState(() {
-      List<RuleTile> newTiles = [];
-      for (var i = 0; i < tiles.length; i++) {
-        if (tiles[i] != ruleTile) {
-          newTiles.add(RuleTile(
-              model: tiles[i].model,
-              deleteFunction: deleteRule,
-              index: newTiles.length + 1));
-        }
-      }
-      tiles = List.from(newTiles);
-      //List.from(tiles..remove(ruleTile));
-    });
+    List<RuleTile> newTiles = [];
+
+    for (int i = 0; i < automataModel.rules.length; i++) {
+      newTiles.add(RuleTile(
+          model: automataModel.rules[i],
+          deleteFunction: deleteRule,
+          index: newTiles.length + 1,
+          key: ValueKey(automataModel.rules[i])));
+      setState(() {
+        tiles = List.from(newTiles);
+      });
+    }
   }
 
   void addRule() {
@@ -414,6 +413,7 @@ class _EditorState extends State<Editor> {
           index: tiles.length + 1,
           model: r,
           deleteFunction: deleteRule,
+          key: ValueKey(automataModel.rules[tiles.length]),
         )));
     });
   }
